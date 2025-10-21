@@ -2,6 +2,8 @@
 FROM node:18-alpine AS builder
 WORKDIR /app
 
+RUN npm install
+RUN npm run build
 
 # Install deps
 COPY package.json package-lock.json* ./
