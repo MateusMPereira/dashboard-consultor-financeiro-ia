@@ -23,5 +23,4 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/next.config.js ./next.config.js
 
 EXPOSE 80
-ENV PORT=80
 CMD ["npm", "run", "start"]
