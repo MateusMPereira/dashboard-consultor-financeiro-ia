@@ -1,33 +1,26 @@
-# Stage 1: install deps and build
+# Stage 1: Build
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-RUN npm install
-RUN npm run build
-
-# Install deps
-COPY package.json package-lock.json* ./
+# Copia apenas arquivos de dependência e instala
+COPY package*.json ./
 RUN npm ci --silent || npm install --silent
 
-
-# Copy source and build
+# Copia o restante do código e constrói
 COPY . .
 RUN npm run build
 
-
-# Stage 2: run production
+# Stage 2: Run
 FROM node:18-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-
-# Copy from builder
-COPY --from=builder /app/package.json ./
+# Copia arquivos necessários do builder
+COPY --from=builder /app/package*.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./
-
+COPY --from=builder /app/next.config.js ./next.config.js
 
 EXPOSE 3000
 CMD ["npm", "run", "start"]
