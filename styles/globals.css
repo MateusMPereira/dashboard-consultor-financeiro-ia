@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+html, body, #__next {
+height: 100%;
+}
+
+
+.text-muted { color: rgba(75, 85, 99, 0.8); }
