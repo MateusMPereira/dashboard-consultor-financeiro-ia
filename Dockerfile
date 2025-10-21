@@ -1,26 +1,25 @@
-# Stage 1: Build
+# -------- Stage 1: Build --------
 FROM node:18-alpine AS builder
 WORKDIR /app
 
-# Copia apenas arquivos de dependência e instala
+# Instala dependências
 COPY package*.json ./
 RUN npm ci --silent || npm install --silent
 
-# Copia o restante do código e constrói
+# Copia todo o código e faz o build
 COPY . .
 RUN npm run build
 
-# Stage 2: Run
+# -------- Stage 2: Run --------
 FROM node:18-alpine AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOST=0.0.0.0
 
-# Copia arquivos necessários do builder
-COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/.next ./.next
-COPY --from=builder /app/public ./public
-COPY --from=builder /app/next.config.js ./next.config.js
+# Copia tudo o que o Next precisa pra rodar
+COPY --from=builder /app ./
 
-EXPOSE 80
-CMD ["npm", "run", "start"]
+EXPOSE 3000
+CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "3000", "-H", "0.0.0.0"]
