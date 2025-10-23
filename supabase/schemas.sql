@@ -5,42 +5,55 @@ CREATE TABLE empresas (
     telefone VARCHAR(20),
     email VARCHAR(150),
     whatsapp_numero VARCHAR(20),
-    data_cadastro TIMESTAMP DEFAULT NOW()
+    ativo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
-    nome VARCHAR(150) NOT NULL,
-    email VARCHAR(150) UNIQUE,
-    senha_hash TEXT,
-    papel VARCHAR(50) DEFAULT 'admin', -- admin, financeiro, colaborador
-    ativo BOOLEAN DEFAULT TRUE,
-    data_criacao TIMESTAMP DEFAULT NOW()
+    auth_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE categorias (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id UUID REFERENCES usuarios(id),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     nome VARCHAR(100) NOT NULL,
     tipo VARCHAR(20) CHECK (tipo IN ('receita', 'despesa')),
+    cor VARCHAR(7),
+    icone VARCHAR(50),
     descricao TEXT,
-    ativo BOOLEAN DEFAULT TRUE
+    ativo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE fornecedores (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id UUID REFERENCES usuarios(id),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     nome VARCHAR(150) NOT NULL,
     cnpj VARCHAR(20),
     contato VARCHAR(100),
-    telefone VARCHAR(20),
     email VARCHAR(150),
-    observacoes TEXT
+    telefone VARCHAR(20),
+    endereco TEXT,
+    cidade VARCHAR(100),
+    uf VARCHAR(2),
+    categoria VARCHAR(100),
+    observacoes TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE lancamentos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    usuario_id UUID REFERENCES usuarios(id),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     categoria_id UUID REFERENCES categorias(id),
     fornecedor_id UUID REFERENCES fornecedores(id),
@@ -48,31 +61,35 @@ CREATE TABLE lancamentos (
     descricao TEXT,
     valor NUMERIC(14,2) NOT NULL,
     data_referencia DATE NOT NULL,
-    origem VARCHAR(30) DEFAULT 'whatsapp', -- whatsapp, lovable, manual
-    criado_por VARCHAR(100), -- nome do usuário que enviou
-    data_criacao TIMESTAMP DEFAULT NOW()
+    origem VARCHAR(30) DEFAULT 'whatsapp',
+    criado_por VARCHAR(100),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE mensagens_whatsapp (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
-    contato VARCHAR(50) NOT NULL, -- número do cliente no WhatsApp
+    contato VARCHAR(50) NOT NULL,
     mensagem TEXT NOT NULL,
     tipo VARCHAR(20) CHECK (tipo IN ('texto', 'audio', 'imagem', 'documento')),
     direcao VARCHAR(10) CHECK (direcao IN ('entrada', 'saida')),
     lancamento_id UUID REFERENCES lancamentos(id),
     processada BOOLEAN DEFAULT FALSE,
-    data_envio TIMESTAMP DEFAULT NOW()
+    data_envio TIMESTAMP DEFAULT NOW(),
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE arquivos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     mensagem_id UUID REFERENCES mensagens_whatsapp(id),
-    tipo VARCHAR(50), -- nota_fiscal, relatorio, outro
-    url TEXT NOT NULL, -- caminho do arquivo (S3, Supabase Storage, etc)
+    tipo VARCHAR(50),
+    url TEXT NOT NULL,
     nome_original TEXT,
-    data_upload TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE kpis_financeiros (
@@ -87,18 +104,20 @@ CREATE TABLE kpis_financeiros (
     margem_contribuicao NUMERIC(5,2),
     ebitda NUMERIC(14,2),
     ebitda_percent NUMERIC(5,2),
-    criado_em TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE alertas (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     titulo VARCHAR(150) NOT NULL,
-    tipo VARCHAR(50), -- CMV Alto, Receita Baixa, EBITDA Negativo, etc
+    tipo VARCHAR(50),
     impacto NUMERIC(5,2),
     descricao TEXT,
     status VARCHAR(30) DEFAULT 'pendente', -- pendente, resolvido, ignorado
-    data_alerta DATE DEFAULT CURRENT_DATE
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE insights (
@@ -108,7 +127,8 @@ CREATE TABLE insights (
     hipotese TEXT,
     acao_recomendada TEXT,
     status VARCHAR(30) DEFAULT 'pendente', -- pendente, em_analise, resolvido
-    data_criacao TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE metas (
@@ -117,7 +137,8 @@ CREATE TABLE metas (
     tipo VARCHAR(30) CHECK (tipo IN ('receita', 'cmv', 'ebitda')),
     valor_alvo NUMERIC(14,2),
     periodo DATE NOT NULL,
-    criado_em TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
 
 CREATE TABLE log_ia (
@@ -127,5 +148,6 @@ CREATE TABLE log_ia (
     acao VARCHAR(100),
     resultado TEXT,
     sucesso BOOLEAN DEFAULT TRUE,
-    criado_em TIMESTAMP DEFAULT NOW()
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
 );
