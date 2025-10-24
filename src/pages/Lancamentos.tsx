@@ -10,31 +10,23 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface Lancamento {
-  id: string;
-  tipo: string;
-  descricao: string;
-  valor: number;
-  data_referencia: string;
-  categoria_id?: string;
-  fornecedor_id?: string;
-  categories?: { name: string } | null;
-  suppliers?: { name: string } | null;
-}
+import { Lancamento, TipoLancamento, NaturezaLancamento, ClassificacaoLancamento, StatusLancamento } from "@/types/lancamento";
 
 interface Category {
   id: string;
-  name: string;
-  type: string;
+  nome: string;
+  tipo: string;
 }
 
 interface Supplier {
   id: string;
-  name: string;
+  nome: string;
 }
 
 const Lancamentos = () => {
+  const {user, authUser} = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -43,10 +35,19 @@ const Lancamentos = () => {
   const [editingLancamento, setEditingLancamento] = useState<Lancamento | null>(null);
 
   const [formData, setFormData] = useState({
-    tipo: "despesa" as "receita" | "despesa",
+    tipo: "despesa" as TipoLancamento,
+    natureza: "operacional" as NaturezaLancamento,
+    classificacao: "variavel" as ClassificacaoLancamento,
     descricao: "",
     valor: "",
+    valor_liquido: "",
+    impostos: "",
     data_referencia: format(new Date(), "yyyy-MM-dd"),
+    data_vencimento: format(new Date(), "yyyy-MM-dd"),
+    data_pagamento: "",
+    status: "pendente" as "pendente" | "pago" | "atrasado" | "cancelado",
+    forma_pagamento: "",
+    parcelas: "1",
     categoria_id: "",
     fornecedor_id: "",
   });
@@ -57,20 +58,54 @@ const Lancamentos = () => {
 
   const fetchData = async () => {
     try {
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+
       const [lancamentosRes, categoriesRes, suppliersRes] = await Promise.all([
         supabase
           .from("lancamentos")
-          .select("*, categories(name), suppliers(name)")
+          .select("*, categorias(nome), fornecedores(nome)")
+          .filter("empresa_id", "eq", user.empresa_id)
           .order("data_referencia", { ascending: false }),
-        supabase.from("categories").select("*"),
-        supabase.from("suppliers").select("*"),
+        supabase.from("categorias").select("*"),
+        supabase.from("fornecedores").select("*"),
       ]);
 
       if (lancamentosRes.error) throw lancamentosRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
       if (suppliersRes.error) throw suppliersRes.error;
 
-      setLancamentos(lancamentosRes.data || []);
+      const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map(item => {
+        const tipedItem = item as any;
+        return {
+          id: tipedItem.id,
+          usuario_id: tipedItem.usuario_id,
+          empresa_id: tipedItem.empresa_id,
+          categoria_id: tipedItem.categoria_id,
+          fornecedor_id: tipedItem.fornecedor_id,
+          tipo: (tipedItem.tipo || "despesa") as TipoLancamento,
+          natureza: tipedItem.natureza as NaturezaLancamento || null,
+          classificacao: tipedItem.classificacao as ClassificacaoLancamento || null,
+          descricao: tipedItem.descricao,
+          valor: Number(tipedItem.valor),
+          valor_liquido: tipedItem.valor_liquido ? Number(tipedItem.valor_liquido) : null,
+          impostos: tipedItem.impostos ? Number(tipedItem.impostos) : null,
+          data_referencia: tipedItem.data_referencia,
+          data_vencimento: tipedItem.data_vencimento || null,
+          data_pagamento: tipedItem.data_pagamento || null,
+          status: (tipedItem.status || "pendente") as StatusLancamento,
+          forma_pagamento: tipedItem.forma_pagamento || null,
+          parcelas: tipedItem.parcelas ? Number(tipedItem.parcelas) : null,
+          parcela_atual: tipedItem.parcela_atual ? Number(tipedItem.parcela_atual) : null,
+          origem: tipedItem.origem,
+          criado_por: tipedItem.criado_por,
+          created_at: tipedItem.created_at,
+          updated_at: tipedItem.updated_at,
+          categorias: tipedItem.categorias,
+          fornecedores: tipedItem.fornecedores
+        };
+      });
+
+      setLancamentos(lancamentosData);
       setCategories(categoriesRes.data || []);
       setSuppliers(suppliersRes.data || []);
     } catch (error: any) {
@@ -84,17 +119,29 @@ const Lancamentos = () => {
     e.preventDefault();
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
       const lancamentoData = {
         tipo: formData.tipo,
+        natureza: formData.natureza,
+        classificacao: formData.classificacao,
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
+        valor_liquido: formData.valor_liquido ? parseFloat(formData.valor_liquido) : null,
+        impostos: formData.impostos ? parseFloat(formData.impostos) : null,
         data_referencia: formData.data_referencia,
+        data_vencimento: formData.data_vencimento || null,
+        data_pagamento: formData.data_pagamento || null,
+        status: formData.status,
+        forma_pagamento: formData.forma_pagamento || null,
+        parcelas: formData.parcelas ? parseInt(formData.parcelas) : 1,
+        parcela_atual: 1,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        user_id: user.id,
+        usuario_id: user.id,
+        empresa_id: user.empresa_id,
+        origem: "web",
+        criado_por: authUser.email,
       };
 
       if (editingLancamento) {
@@ -123,10 +170,19 @@ const Lancamentos = () => {
   const handleEdit = (lancamento: Lancamento) => {
     setEditingLancamento(lancamento);
     setFormData({
-      tipo: lancamento.tipo as "receita" | "despesa",
-      descricao: lancamento.descricao,
+      tipo: lancamento.tipo,
+      natureza: lancamento.natureza || "operacional",
+      classificacao: lancamento.classificacao || "variavel",
+      descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
+      valor_liquido: lancamento.valor_liquido?.toString() || "",
+      impostos: lancamento.impostos?.toString() || "",
       data_referencia: lancamento.data_referencia,
+      data_vencimento: lancamento.data_vencimento || format(new Date(), "yyyy-MM-dd"),
+      data_pagamento: lancamento.data_pagamento || "",
+      status: lancamento.status as "pendente" | "pago" | "atrasado" | "cancelado" || "pendente",
+      forma_pagamento: lancamento.forma_pagamento || "",
+      parcelas: lancamento.parcelas?.toString() || "1",
       categoria_id: lancamento.categoria_id || "",
       fornecedor_id: lancamento.fornecedor_id || "",
     });
@@ -151,9 +207,18 @@ const Lancamentos = () => {
     setEditingLancamento(null);
     setFormData({
       tipo: "despesa",
+      natureza: "operacional",
+      classificacao: "variavel",
       descricao: "",
       valor: "",
+      valor_liquido: "",
+      impostos: "",
       data_referencia: format(new Date(), "yyyy-MM-dd"),
+      data_vencimento: format(new Date(), "yyyy-MM-dd"),
+      data_pagamento: "",
+      status: "pendente",
+      forma_pagamento: "",
+      parcelas: "1",
       categoria_id: "",
       fornecedor_id: "",
     });
@@ -184,112 +249,209 @@ const Lancamentos = () => {
               Novo Lançamento
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-3xl">
             <DialogHeader>
               <DialogTitle>
                 {editingLancamento ? "Editar Lançamento" : "Novo Lançamento"}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div>
-                <Label>Tipo</Label>
-                <Select
-                  value={formData.tipo}
-                  onValueChange={(value: "receita" | "despesa") =>
-                    setFormData({ ...formData, tipo: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="receita">Receita</SelectItem>
-                    <SelectItem value="despesa">Despesa</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+                            <div className="max-h-[80vh] overflow-y-auto pr-4">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Tipo</Label>
+                                  <Select
+                                    value={formData.tipo}
+                                    onValueChange={(value: "receita" | "despesa") =>
+                                      setFormData({ ...formData, tipo: value })
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="receita">Receita</SelectItem>
+                                      <SelectItem value="despesa">Despesa</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+              
+                                <div>
+                                  <Label>Natureza</Label>
+                                  <Select
+                                    value={formData.natureza}
+                                    onValueChange={(value: "operacional" | "financeira" | "investimento") =>
+                                      setFormData({ ...formData, natureza: value })
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="operacional">Operacional</SelectItem>
+                                      <SelectItem value="financeira">Financeira</SelectItem>
+                                      <SelectItem value="investimento">Investimento</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+              
+                                <div className="md:col-span-2">
+                                  <Label>Descrição</Label>
+                                  <Textarea
+                                    value={formData.descricao}
+                                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                                    required
+                                  />
+                                </div>
+              
+                                <div>
+                                  <Label>Classificação</Label>
+                                  <Select
+                                    value={formData.classificacao}
+                                    onValueChange={(value: "fixa" | "variavel") =>
+                                      setFormData({ ...formData, classificacao: value })
+                                    }
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="fixa">Fixa</SelectItem>
+                                      <SelectItem value="variavel">Variável</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+              
+                                <div>
+                                  <Label>Valor Bruto (R$)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.valor}
+                                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                                    required
+                                  />
+                                </div>
+              
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div>
+                                    <Label>Data de Referência</Label>
+                                    <Input
+                                      type="date"
+                                      value={formData.data_referencia}
+                                      onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
+                                      required
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Data de Vencimento</Label>
+                                    <Input
+                                      type="date"
+                                      value={formData.data_vencimento}
+                                      onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Data de Pagamento</Label>
+                                    <Input
+                                      type="date"
+                                      value={formData.data_pagamento}
+                                      onChange={(e) => setFormData({ ...formData, data_pagamento: e.target.value })}
+                                    />
+                                  </div>
+                                </div>
+              
+                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div>
+                                    <Label>Status</Label>
+                                    <Select
+                                      value={formData.status}
+                                      onValueChange={(value: "pendente" | "pago" | "atrasado" | "cancelado") =>
+                                        setFormData({ ...formData, status: value })
+                                      }
+                                    >
+                                      <SelectTrigger>
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="pendente">Pendente</SelectItem>
+                                        <SelectItem value="pago">Pago</SelectItem>
+                                        <SelectItem value="atrasado">Atrasado</SelectItem>
+                                        <SelectItem value="cancelado">Cancelado</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div>
+                                    <Label>Forma de Pagamento</Label>
+                                    <Input
+                                      value={formData.forma_pagamento}
+                                      onChange={(e) => setFormData({ ...formData, forma_pagamento: e.target.value })}
+                                    />
+                                  </div>
+                                  <div>
+                                    <Label>Número de Parcelas</Label>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      value={formData.parcelas}
+                                      onChange={(e) => setFormData({ ...formData, parcelas: e.target.value })}
+                                    />
+                                  </div>
+                                </div>
+              
+                                <div>
+                                  <Label>Categoria (opcional)</Label>
+                                  <Select
+                                    value={formData.categoria_id}
+                                    onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder={categories.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione..."} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {categories.length === 0 ? (
+                                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                                          Nenhuma categoria cadastrada.<br />Cadastre na página Categorias.
+                                        </div>
+                                      ) : (
+                                        categories.map((cat) => (
+                                          <SelectItem key={cat.id} value={cat.id}>
+                                            {cat.nome}
+                                          </SelectItem>
+                                        ))
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+              
+                                <div>
+                                  <Label>Fornecedor (opcional)</Label>
+                                  <Select
+                                    value={formData.fornecedor_id}
+                                    onValueChange={(value) => setFormData({ ...formData, fornecedor_id: value })}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder={suppliers.length === 0 ? "Nenhum fornecedor cadastrado" : "Selecione..."} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {suppliers.length === 0 ? (
+                                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                                          Nenhum fornecedor cadastrado.<br />Cadastre na página Fornecedores.
+                                        </div>
+                                      ) : (
+                                        suppliers.map((sup) => (
+                                          <SelectItem key={sup.id} value={sup.id}>
+                                            {sup.nome}
+                                          </SelectItem>
+                                        ))
+                                      )}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            </div>
 
-              <div>
-                <Label>Descrição</Label>
-                <Textarea
-                  value={formData.descricao}
-                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Valor (R$)</Label>
-                <Input
-                  type="number"
-                  step="0.01"
-                  value={formData.valor}
-                  onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Data</Label>
-                <Input
-                  type="date"
-                  value={formData.data_referencia}
-                  onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
-                  required
-                />
-              </div>
-
-              <div>
-                <Label>Categoria (opcional)</Label>
-                <Select
-                  value={formData.categoria_id}
-                  onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={categories.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.length === 0 ? (
-                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        Nenhuma categoria cadastrada.<br />Cadastre na página Categorias.
-                      </div>
-                    ) : (
-                      categories.map((cat) => (
-                        <SelectItem key={cat.id} value={cat.id}>
-                          {cat.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label>Fornecedor (opcional)</Label>
-                <Select
-                  value={formData.fornecedor_id}
-                  onValueChange={(value) => setFormData({ ...formData, fornecedor_id: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={suppliers.length === 0 ? "Nenhum fornecedor cadastrado" : "Selecione..."} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.length === 0 ? (
-                      <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                        Nenhum fornecedor cadastrado.<br />Cadastre na página Fornecedores.
-                      </div>
-                    ) : (
-                      suppliers.map((sup) => (
-                        <SelectItem key={sup.id} value={sup.id}>
-                          {sup.name}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="flex gap-2 justify-end">
+              <div className="flex gap-2 justify-end pt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
                   Cancelar
                 </Button>
@@ -366,8 +528,8 @@ const Lancamentos = () => {
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(lancamento.data_referencia), "dd/MM/yyyy")}
-                      {lancamento.categories && ` • ${lancamento.categories.name}`}
-                      {lancamento.suppliers && ` • ${lancamento.suppliers.name}`}
+                      {lancamento.categorias && ` • ${lancamento.categorias.nome}`}
+                      {lancamento.fornecedores && ` • ${lancamento.fornecedores.nome}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
