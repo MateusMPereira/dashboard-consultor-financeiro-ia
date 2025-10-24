@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/contexts/AuthContext";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -26,34 +27,40 @@ import { supabase } from "@/integrations/supabase/client";
 
 interface Supplier {
   id: string;
-  name: string;
+  usuario_id: string | null;
+  empresa_id: string;
+  nome: string;
   cnpj?: string;
-  contact_name?: string;
+  contato?: string;
   email?: string;
-  phone?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  category?: string;
-  notes?: string;
+  telefone?: string;
+  endereco?: string;
+  cidade?: string;
+  uf?: string;
+  categoria?: string;
+  observacoes?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at: string | null;
 }
 
 const Fornecedores = () => {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    name: "",
+    nome: "",
     cnpj: "",
-    contact_name: "",
+    contato: "",
     email: "",
-    phone: "",
-    address: "",
-    city: "",
-    state: "",
-    category: "",
-    notes: "",
+    telefone: "",
+    endereco: "",
+    cidade: "",
+    uf: "",
+    categoria: "",
+    observacoes: "",
   });
 
   useEffect(() => {
@@ -62,10 +69,14 @@ const Fornecedores = () => {
 
   const fetchSuppliers = async () => {
     try {
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+
       const { data, error } = await supabase
-        .from("suppliers")
+        .from("fornecedores")
         .select("*")
-        .order("name");
+        .filter("ativo", "eq", true)
+        .filter("empresa_id", "eq", user.empresa_id)
+        .order("nome");
 
       if (error) throw error;
       setSuppliers(data || []);
@@ -78,16 +89,16 @@ const Fornecedores = () => {
 
   const resetForm = () => {
     setFormData({
-      name: "",
+      nome: "",
       cnpj: "",
-      contact_name: "",
+      contato: "",
       email: "",
-      phone: "",
-      address: "",
-      city: "",
-      state: "",
-      category: "",
-      notes: "",
+      telefone: "",
+      endereco: "",
+      cidade: "",
+      uf: "",
+      categoria: "",
+      observacoes: "",
     });
     setEditingSupplier(null);
   };
@@ -96,26 +107,27 @@ const Fornecedores = () => {
     e.preventDefault();
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
       const supplierData = {
-        name: formData.name,
+        nome: formData.nome,
         cnpj: formData.cnpj || null,
-        contact_name: formData.contact_name || null,
+        contato: formData.contato || null,
         email: formData.email || null,
-        phone: formData.phone || null,
-        address: formData.address || null,
-        city: formData.city || null,
-        state: formData.state || null,
-        category: formData.category || null,
-        notes: formData.notes || null,
-        user_id: user.id,
+        telefone: formData.telefone || null,
+        endereco: formData.endereco || null,
+        cidade: formData.cidade || null,
+        uf: formData.uf || null,
+        categoria: formData.categoria || null,
+        observacoes: formData.observacoes || null,
+        usuario_id: user.id,
+        empresa_id: user.empresa_id,
+        ativo: true,
       };
 
       if (editingSupplier) {
         const { error } = await supabase
-          .from("suppliers")
+          .from("fornecedores")
           .update(supplierData)
           .eq("id", editingSupplier.id);
 
@@ -123,7 +135,7 @@ const Fornecedores = () => {
         toast.success("Fornecedor atualizado com sucesso!");
       } else {
         const { error } = await supabase
-          .from("suppliers")
+          .from("fornecedores")
           .insert(supplierData);
 
         if (error) throw error;
@@ -141,16 +153,16 @@ const Fornecedores = () => {
   const handleEdit = (supplier: Supplier) => {
     setEditingSupplier(supplier);
     setFormData({
-      name: supplier.name,
+      nome: supplier.nome,
       cnpj: supplier.cnpj || "",
-      contact_name: supplier.contact_name || "",
+      contato: supplier.contato || "",
       email: supplier.email || "",
-      phone: supplier.phone || "",
-      address: supplier.address || "",
-      city: supplier.city || "",
-      state: supplier.state || "",
-      category: supplier.category || "",
-      notes: supplier.notes || "",
+      telefone: supplier.telefone || "",
+      endereco: supplier.endereco || "",
+      cidade: supplier.cidade || "",
+      uf: supplier.uf || "",
+      categoria: supplier.categoria || "",
+      observacoes: supplier.observacoes || "",
     });
     setIsOpen(true);
   };
@@ -160,7 +172,7 @@ const Fornecedores = () => {
 
     try {
       const { error } = await supabase
-        .from("suppliers")
+        .from("fornecedores")
         .delete()
         .eq("id", id);
 
@@ -205,11 +217,11 @@ const Fornecedores = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
-                  <Label htmlFor="name">Nome da Empresa *</Label>
+                  <Label htmlFor="nome">Nome da Empresa *</Label>
                   <Input
-                    id="name"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    id="nome"
+                    value={formData.nome}
+                    onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                     required
                     placeholder="Nome do fornecedor"
                   />
@@ -224,29 +236,29 @@ const Fornecedores = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="category">Categoria</Label>
+                  <Label htmlFor="categoria">Categoria</Label>
                   <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    id="categoria"
+                    value={formData.categoria}
+                    onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
                     placeholder="Ex: Matéria-prima, Serviços"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="contact_name">Nome do Contato</Label>
+                  <Label htmlFor="contato">Nome do Contato</Label>
                   <Input
-                    id="contact_name"
-                    value={formData.contact_name}
-                    onChange={(e) => setFormData({ ...formData, contact_name: e.target.value })}
+                    id="contato"
+                    value={formData.contato}
+                    onChange={(e) => setFormData({ ...formData, contato: e.target.value })}
                     placeholder="Nome do responsável"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="phone">Telefone</Label>
+                  <Label htmlFor="telefone">Telefone</Label>
                   <Input
-                    id="phone"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    id="telefone"
+                    value={formData.telefone}
+                    onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
                     placeholder="(00) 00000-0000"
                   />
                 </div>
@@ -261,39 +273,39 @@ const Fornecedores = () => {
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="address">Endereço</Label>
+                  <Label htmlFor="endereco">Endereço</Label>
                   <Input
-                    id="address"
-                    value={formData.address}
-                    onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                    id="endereco"
+                    value={formData.endereco}
+                    onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                     placeholder="Rua, número, bairro"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="city">Cidade</Label>
+                  <Label htmlFor="cidade">Cidade</Label>
                   <Input
-                    id="city"
-                    value={formData.city}
-                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    id="cidade"
+                    value={formData.cidade}
+                    onChange={(e) => setFormData({ ...formData, cidade: e.target.value })}
                     placeholder="Cidade"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="state">Estado</Label>
+                  <Label htmlFor="uf">Estado</Label>
                   <Input
-                    id="state"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    id="uf"
+                    value={formData.uf}
+                    onChange={(e) => setFormData({ ...formData, uf: e.target.value })}
                     placeholder="UF"
                     maxLength={2}
                   />
                 </div>
                 <div className="col-span-2">
-                  <Label htmlFor="notes">Observações</Label>
+                  <Label htmlFor="observacoes">Observações</Label>
                   <Textarea
-                    id="notes"
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                    id="observacoes"
+                    value={formData.observacoes}
+                    onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
                     placeholder="Informações adicionais sobre o fornecedor"
                     rows={3}
                   />
@@ -359,18 +371,18 @@ const Fornecedores = () => {
                 <TableBody>
                   {suppliers.map((supplier) => (
                     <TableRow key={supplier.id}>
-                      <TableCell className="font-medium">{supplier.name}</TableCell>
+                      <TableCell className="font-medium">{supplier.nome}</TableCell>
                       <TableCell>{supplier.cnpj || "-"}</TableCell>
                       <TableCell>
                         <div className="flex flex-col">
-                          <span className="text-sm">{supplier.contact_name || "-"}</span>
+                          <span className="text-sm">{supplier.contato || "-"}</span>
                           {supplier.email && (
                             <span className="text-xs text-muted-foreground">{supplier.email}</span>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell>{supplier.phone || "-"}</TableCell>
-                      <TableCell>{supplier.category || "-"}</TableCell>
+                      <TableCell>{supplier.telefone || "-"}</TableCell>
+                      <TableCell>{supplier.categoria || "-"}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
