@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -32,34 +33,40 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Category {
+interface Categoria {
   id: string;
-  name: string;
-  type: "income" | "expense";
-  color?: string;
-  icon?: string;
-  description?: string;
+  nome: string;
+  tipo: "receita" | "despesa";
+  cor?: string;
+  icone?: string;
+  descricao?: string;
+  empresa_id: string;
+  usuario_id?: string;
+  ativo: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
 const colorOptions = [
-  { value: "hsl(221 83% 53%)", label: "Azul", class: "bg-blue-500" },
-  { value: "hsl(142 76% 36%)", label: "Verde", class: "bg-green-500" },
-  { value: "hsl(0 84% 60%)", label: "Vermelho", class: "bg-red-500" },
-  { value: "hsl(38 92% 50%)", label: "Laranja", class: "bg-orange-500" },
-  { value: "hsl(280 100% 70%)", label: "Roxo", class: "bg-purple-500" },
-  { value: "hsl(340 82% 52%)", label: "Rosa", class: "bg-pink-500" },
+  { value: "#2563eb", label: "Azul", class: "bg-blue-500" },
+  { value: "#16a34a", label: "Verde", class: "bg-green-500" },
+  { value: "#ef4444", label: "Vermelho", class: "bg-red-500" },
+  { value: "#f59e0b", label: "Laranja", class: "bg-orange-500" },
+  { value: "#c084fc", label: "Roxo", class: "bg-purple-500" },
+  { value: "#ec4899", label: "Rosa", class: "bg-pink-500" },
 ];
 
 const Categorias = () => {
+  const {user} = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    name: "",
-    type: "expense" as "income" | "expense",
-    color: colorOptions[0].value,
-    description: "",
+    nome: "",
+    tipo: "despesa" as "receita" | "despesa",
+    cor: colorOptions[0].value,
+    descricao: "",
   });
 
   useEffect(() => {
@@ -68,15 +75,19 @@ const Categorias = () => {
 
   const fetchCategories = async () => {
     try {
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+
       const { data, error } = await supabase
-        .from("categories")
+        .from("categorias")
         .select("*")
-        .order("name");
+        .filter("ativo", "eq", true)
+        .filter("empresa_id", "eq", user.empresa_id)
+        .order("nome");
 
       if (error) throw error;
       setCategories((data || []).map(cat => ({
         ...cat,
-        type: cat.type as "income" | "expense",
+        tipo: cat.tipo as "receita" | "despesa",
       })));
     } catch (error: any) {
       toast.error("Erro ao carregar categorias: " + error.message);
@@ -87,10 +98,10 @@ const Categorias = () => {
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      type: "expense",
-      color: colorOptions[0].value,
-      description: "",
+      nome: "",
+      tipo: "despesa",
+      cor: colorOptions[0].value,
+      descricao: "",
     });
     setEditingCategory(null);
   };
@@ -99,20 +110,21 @@ const Categorias = () => {
     e.preventDefault();
     
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuário não autenticado");
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
       const categoryData = {
-        name: formData.name,
-        type: formData.type,
-        color: formData.color,
-        description: formData.description || null,
-        user_id: user.id,
+        nome: formData.nome,
+        tipo: formData.tipo,
+        cor: formData.cor,
+        descricao: formData.descricao || null,
+        usuario_id: user.id,
+        empresa_id: user.empresa_id,
+        ativo: true,
       };
 
       if (editingCategory) {
         const { error } = await supabase
-          .from("categories")
+          .from("categorias")
           .update(categoryData)
           .eq("id", editingCategory.id);
 
@@ -120,7 +132,7 @@ const Categorias = () => {
         toast.success("Categoria atualizada com sucesso!");
       } else {
         const { error } = await supabase
-          .from("categories")
+          .from("categorias")
           .insert(categoryData);
 
         if (error) throw error;
@@ -135,14 +147,14 @@ const Categorias = () => {
     }
   };
 
-  const handleEdit = (category: Category) => {
+  const handleEdit = (category: Categoria) => {
     setEditingCategory(category);
     setFormData({
-      name: category.name,
-      type: category.type,
-      color: category.color || colorOptions[0].value,
-      description: category.description || "",
-    });
+        nome: category.nome,
+        tipo: category.tipo,
+        cor: category.cor || colorOptions[0].value,
+        descricao: category.descricao || "",
+      });
     setIsOpen(true);
   };
 
@@ -151,7 +163,7 @@ const Categorias = () => {
 
     try {
       const { error } = await supabase
-        .from("categories")
+        .from("categorias")
         .delete()
         .eq("id", id);
 
@@ -163,8 +175,8 @@ const Categorias = () => {
     }
   };
 
-  const incomeCategories = categories.filter(c => c.type === "income");
-  const expenseCategories = categories.filter(c => c.type === "expense");
+  const incomeCategories = categories.filter(c => c.tipo === "receita");
+  const expenseCategories = categories.filter(c => c.tipo === "despesa");
 
   return (
     <div className="space-y-6">
@@ -198,35 +210,35 @@ const Categorias = () => {
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="name">Nome da Categoria *</Label>
+                <Label htmlFor="nome">Nome da Categoria *</Label>
                 <Input
-                  id="name"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   required
                   placeholder="Ex: Alimentação, Salário"
                 />
               </div>
               
               <div>
-                <Label htmlFor="type">Tipo *</Label>
+                <Label htmlFor="tipo">Tipo *</Label>
                 <Select
-                  value={formData.type}
-                  onValueChange={(value: "income" | "expense") =>
-                    setFormData({ ...formData, type: value })
+                  value={formData.tipo}
+                  onValueChange={(value: "receita" | "despesa") =>
+                    setFormData({ ...formData, tipo: value })
                   }
                 >
                   <SelectTrigger id="type">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="income">
+                    <SelectItem value="receita">
                       <div className="flex items-center gap-2">
                         <TrendingUp className="h-4 w-4 text-green-500" />
                         Receita
                       </div>
                     </SelectItem>
-                    <SelectItem value="expense">
+                    <SelectItem value="despesa">
                       <div className="flex items-center gap-2">
                         <TrendingDown className="h-4 w-4 text-red-500" />
                         Despesa
@@ -237,11 +249,11 @@ const Categorias = () => {
               </div>
 
               <div>
-                <Label htmlFor="color">Cor</Label>
+                <Label htmlFor="cor">Cor</Label>
                 <Select
-                  value={formData.color}
+                  value={formData.cor}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, color: value })
+                    setFormData({ ...formData, cor: value })
                   }
                 >
                   <SelectTrigger id="color">
@@ -261,11 +273,11 @@ const Categorias = () => {
               </div>
 
               <div>
-                <Label htmlFor="description">Descrição</Label>
+                <Label htmlFor="descricao">Descrição</Label>
                 <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  id="descricao"
+                  value={formData.descricao}
+                  onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
                   placeholder="Descrição da categoria (opcional)"
                   rows={3}
                 />
@@ -323,13 +335,13 @@ const Categorias = () => {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
+                        style={{ backgroundColor: category.cor }}
                       />
                       <div>
-                        <p className="font-medium">{category.name}</p>
-                        {category.description && (
+                        <p className="font-medium">{category.nome}</p>
+                        {category.descricao && (
                           <p className="text-xs text-muted-foreground">
-                            {category.description}
+                            {category.descricao}
                           </p>
                         )}
                       </div>
@@ -388,13 +400,13 @@ const Categorias = () => {
                     <div className="flex items-center gap-3">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
+                        style={{ backgroundColor: category.cor }}
                       />
                       <div>
-                        <p className="font-medium">{category.name}</p>
-                        {category.description && (
+                        <p className="font-medium">{category.nome}</p>
+                        {category.descricao && (
                           <p className="text-xs text-muted-foreground">
-                            {category.description}
+                            {category.descricao}
                           </p>
                         )}
                       </div>
