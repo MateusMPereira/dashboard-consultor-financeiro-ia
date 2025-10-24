@@ -12,6 +12,7 @@ CREATE TABLE empresas (
 
 CREATE TABLE usuarios (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    nome VARCHAR(150) NOT NULL,
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     auth_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
     created_at TIMESTAMP DEFAULT NOW(),
@@ -58,10 +59,13 @@ CREATE TABLE lancamentos (
     categoria_id UUID REFERENCES categorias(id),
     fornecedor_id UUID REFERENCES fornecedores(id),
     tipo VARCHAR(20) CHECK (tipo IN ('receita', 'despesa')) NOT NULL,
+    natureza VARCHAR(30) CHECK (natureza IN ('operacional', 'financeira', 'investimento')),
     descricao TEXT,
     valor NUMERIC(14,2) NOT NULL,
+    valor_liquido NUMERIC(14,2),
+    custo NUMERIC(14,2) NOT NULL,
+    impostos NUMERIC(14,2),
     data_referencia DATE NOT NULL,
-    origem VARCHAR(30) DEFAULT 'whatsapp',
     criado_por VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
