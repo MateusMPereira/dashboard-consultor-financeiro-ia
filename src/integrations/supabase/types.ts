@@ -6,160 +6,675 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[]
 
+export type TipoLancamento = "receita" | "despesa"
+export type NaturezaLancamento = "operacional" | "financeira" | "investimento"
+
+export interface Lancamento {
+  id: string
+  usuario_id: string | null
+  empresa_id: string
+  categoria_id: string | null
+  fornecedor_id: string | null
+  tipo: TipoLancamento
+  natureza: NaturezaLancamento | null
+  descricao: string | null
+  valor: number
+  valor_liquido: number | null
+  custo: number
+  impostos: number | null
+  data_referencia: string
+  criado_por: string | null
+  created_at: string
+  updated_at: string | null
+  categorias?: {
+    nome: string
+  } | null
+  fornecedores?: {
+    nome: string
+  } | null
+}
+
 export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.5"
   }
+  auth: {
+    Tables: {
+      users: {
+        Row: {
+          id: string
+          email?: string | null
+          phone?: string | null
+        }
+      }
+    }
+  }
   public: {
     Tables: {
-      categories: {
+      empresas: {
         Row: {
-          color: string | null
-          created_at: string
-          description: string | null
-          icon: string | null
           id: string
-          name: string
-          type: string
-          updated_at: string
-          user_id: string
+          nome: string
+          cnpj: string | null
+          telefone: string | null
+          email: string | null
+          whatsapp_numero: string | null
+          ativo: boolean
+          created_at: string
+          updated_at: string | null
         }
         Insert: {
-          color?: string | null
-          created_at?: string
-          description?: string | null
-          icon?: string | null
           id?: string
-          name: string
-          type: string
-          updated_at?: string
-          user_id: string
+          nome: string
+          cnpj?: string | null
+          telefone?: string | null
+          email?: string | null
+          whatsapp_numero?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string | null
         }
         Update: {
-          color?: string | null
-          created_at?: string
-          description?: string | null
-          icon?: string | null
           id?: string
-          name?: string
-          type?: string
-          updated_at?: string
-          user_id?: string
+          nome?: string
+          cnpj?: string | null
+          telefone?: string | null
+          email?: string | null
+          whatsapp_numero?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
-      lancamentos: {
+      usuarios: {
         Row: {
-          categoria_id: string | null
-          created_at: string
-          criado_por: string | null
-          data_referencia: string
-          descricao: string
-          fornecedor_id: string | null
           id: string
-          origem: string | null
-          tipo: string
-          updated_at: string
-          user_id: string
-          valor: number
+          nome: string
+          empresa_id: string
+          auth_id: string
+          created_at: string
+          updated_at: string | null
         }
         Insert: {
-          categoria_id?: string | null
-          created_at?: string
-          criado_por?: string | null
-          data_referencia: string
-          descricao: string
-          fornecedor_id?: string | null
           id?: string
-          origem?: string | null
-          tipo: string
-          updated_at?: string
-          user_id: string
-          valor: number
+          nome: string
+          empresa_id: string
+          auth_id: string
+          created_at?: string
+          updated_at?: string | null
         }
         Update: {
-          categoria_id?: string | null
-          created_at?: string
-          criado_por?: string | null
-          data_referencia?: string
-          descricao?: string
-          fornecedor_id?: string | null
           id?: string
-          origem?: string | null
-          tipo?: string
-          updated_at?: string
-          user_id?: string
-          valor?: number
+          nome: string
+          empresa_id?: string
+          auth_id?: string
+          created_at?: string
+          updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "usuarios_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "usuarios_users_id_fkey"
+            columns: ["auth_id"]
+            isOneToOne: false
+            referencedRelation: "auth.users"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      categorias: {
+        Row: {
+          id: string
+          usuario_id: string | null
+          empresa_id: string
+          nome: string
+          tipo: string
+          cor: string | null
+          icone: string | null
+          descricao: string | null
+          ativo: boolean
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          usuario_id?: string | null
+          empresa_id: string
+          nome: string
+          tipo: string
+          cor?: string | null
+          icone?: string | null
+          descricao?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          usuario_id?: string | null
+          empresa_id?: string
+          nome?: string
+          tipo?: string
+          cor?: string | null
+          icone?: string | null
+          descricao?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categorias_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categorias_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      fornecedores: {
+        Row: {
+          id: string
+          usuario_id: string | null
+          empresa_id: string
+          nome: string
+          cnpj: string | null
+          contato: string | null
+          email: string | null
+          telefone: string | null
+          endereco: string | null
+          cidade: string | null
+          uf: string | null
+          categoria: string | null
+          observacoes: string | null
+          ativo: boolean
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          usuario_id?: string | null
+          empresa_id: string
+          nome: string
+          cnpj?: string | null
+          contato?: string | null
+          email?: string | null
+          telefone?: string | null
+          endereco?: string | null
+          cidade?: string | null
+          uf?: string | null
+          categoria?: string | null
+          observacoes?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          usuario_id?: string | null
+          empresa_id?: string
+          nome?: string
+          cnpj?: string | null
+          contato?: string | null
+          email?: string | null
+          telefone?: string | null
+          endereco?: string | null
+          cidade?: string | null
+          uf?: string | null
+          categoria?: string | null
+          observacoes?: string | null
+          ativo?: boolean
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fornecedores_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fornecedores_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      lancamentos: {
+        Row: {
+          id: string
+          usuario_id: string | null
+          empresa_id: string
+          categoria_id: string | null
+          fornecedor_id: string | null
+          tipo: string
+          descricao: string | null
+          valor: number
+          data_referencia: string
+          origem: string | null
+          criado_por: string | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          usuario_id?: string | null
+          empresa_id: string
+          categoria_id?: string | null
+          fornecedor_id?: string | null
+          tipo: string
+          descricao?: string | null
+          valor: number
+          data_referencia: string
+          origem?: string | null
+          criado_por?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          usuario_id?: string | null
+          empresa_id?: string
+          categoria_id?: string | null
+          fornecedor_id?: string | null
+          tipo?: string
+          descricao?: string | null
+          valor?: number
+          data_referencia?: string
+          origem?: string | null
+          criado_por?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_usuario_id_fkey"
+            columns: ["usuario_id"]
+            isOneToOne: false
+            referencedRelation: "usuarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "lancamentos_categoria_id_fkey"
             columns: ["categoria_id"]
             isOneToOne: false
-            referencedRelation: "categories"
+            referencedRelation: "categorias"
             referencedColumns: ["id"]
           },
           {
             foreignKeyName: "lancamentos_fornecedor_id_fkey"
             columns: ["fornecedor_id"]
             isOneToOne: false
-            referencedRelation: "suppliers"
+            referencedRelation: "fornecedores"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
-      suppliers: {
+      mensagens_whatsapp: {
         Row: {
-          address: string | null
-          category: string | null
-          city: string | null
-          cnpj: string | null
-          contact_name: string | null
-          created_at: string
-          email: string | null
           id: string
-          name: string
-          notes: string | null
-          phone: string | null
-          state: string | null
-          updated_at: string
-          user_id: string
+          empresa_id: string
+          contato: string
+          mensagem: string
+          tipo: string
+          direcao: string
+          lancamento_id: string | null
+          processada: boolean
+          data_envio: string
+          created_at: string
+          updated_at: string | null
         }
         Insert: {
-          address?: string | null
-          category?: string | null
-          city?: string | null
-          cnpj?: string | null
-          contact_name?: string | null
-          created_at?: string
-          email?: string | null
           id?: string
-          name: string
-          notes?: string | null
-          phone?: string | null
-          state?: string | null
-          updated_at?: string
-          user_id: string
+          empresa_id: string
+          contato: string
+          mensagem: string
+          tipo: string
+          direcao: string
+          lancamento_id?: string | null
+          processada?: boolean
+          data_envio?: string
+          created_at?: string
+          updated_at?: string | null
         }
         Update: {
-          address?: string | null
-          category?: string | null
-          city?: string | null
-          cnpj?: string | null
-          contact_name?: string | null
-          created_at?: string
-          email?: string | null
           id?: string
-          name?: string
-          notes?: string | null
-          phone?: string | null
-          state?: string | null
-          updated_at?: string
-          user_id?: string
+          empresa_id?: string
+          contato?: string
+          mensagem?: string
+          tipo?: string
+          direcao?: string
+          lancamento_id?: string | null
+          processada?: boolean
+          data_envio?: string
+          created_at?: string
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "mensagens_whatsapp_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mensagens_whatsapp_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      arquivos: {
+        Row: {
+          id: string
+          empresa_id: string
+          mensagem_id: string | null
+          tipo: string | null
+          url: string
+          nome_original: string | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          empresa_id: string
+          mensagem_id?: string | null
+          tipo?: string | null
+          url: string
+          nome_original?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          empresa_id?: string
+          mensagem_id?: string | null
+          tipo?: string | null
+          url?: string
+          nome_original?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "arquivos_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "arquivos_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens_whatsapp"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      kpis_financeiros: {
+        Row: {
+          id: string
+          empresa_id: string
+          periodo_inicio: string
+          periodo_fim: string
+          receita_liquida: number | null
+          cmv: number | null
+          custo_pessoal: number | null
+          custo_fixo: number | null
+          margem_contribuicao: number | null
+          ebitda: number | null
+          ebitda_percent: number | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          empresa_id: string
+          periodo_inicio: string
+          periodo_fim: string
+          receita_liquida?: number | null
+          cmv?: number | null
+          custo_pessoal?: number | null
+          custo_fixo?: number | null
+          margem_contribuicao?: number | null
+          ebitda?: number | null
+          ebitda_percent?: number | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          empresa_id?: string
+          periodo_inicio?: string
+          periodo_fim?: string
+          receita_liquida?: number | null
+          cmv?: number | null
+          custo_pessoal?: number | null
+          custo_fixo?: number | null
+          margem_contribuicao?: number | null
+          ebitda?: number | null
+          ebitda_percent?: number | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kpis_financeiros_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      alertas: {
+        Row: {
+          id: string
+          empresa_id: string
+          titulo: string
+          tipo: string | null
+          impacto: number | null
+          descricao: string | null
+          status: string | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          empresa_id: string
+          titulo: string
+          tipo?: string | null
+          impacto?: number | null
+          descricao?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          empresa_id?: string
+          titulo?: string
+          tipo?: string | null
+          impacto?: number | null
+          descricao?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "alertas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      insights: {
+        Row: {
+          id: string
+          empresa_id: string
+          alerta_id: string | null
+          hipotese: string | null
+          acao_recomendada: string | null
+          status: string | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          empresa_id: string
+          alerta_id?: string | null
+          hipotese?: string | null
+          acao_recomendada?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          empresa_id?: string
+          alerta_id?: string | null
+          hipotese?: string | null
+          acao_recomendada?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insights_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insights_alerta_id_fkey"
+            columns: ["alerta_id"]
+            isOneToOne: false
+            referencedRelation: "alertas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      metas: {
+        Row: {
+          id: string
+          empresa_id: string
+          tipo: string
+          valor_alvo: number
+          periodo: string
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          empresa_id: string
+          tipo: string
+          valor_alvo: number
+          periodo: string
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          empresa_id?: string
+          tipo?: string
+          valor_alvo?: number
+          periodo?: string
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "metas_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      log_ia: {
+        Row: {
+          id: string
+          empresa_id: string
+          mensagem_id: string | null
+          acao: string | null
+          resultado: string | null
+          sucesso: boolean
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          empresa_id: string
+          mensagem_id?: string | null
+          acao?: string | null
+          resultado?: string | null
+          sucesso?: boolean
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          empresa_id?: string
+          mensagem_id?: string | null
+          acao?: string | null
+          resultado?: string | null
+          sucesso?: boolean
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "log_ia_empresa_id_fkey"
+            columns: ["empresa_id"]
+            isOneToOne: false
+            referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "log_ia_mensagem_id_fkey"
+            columns: ["mensagem_id"]
+            isOneToOne: false
+            referencedRelation: "mensagens_whatsapp"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -181,21 +696,23 @@ type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
 type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
+// Auth schema types
+export type AuthSchema = DatabaseWithoutInternals[Extract<keyof Database, "auth">]
+export type AuthUser = Database["auth"]["Tables"]["users"]["Row"]
+
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
     : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Row: infer R
     }
     ? R
@@ -260,39 +777,8 @@ export type TablesUpdate<
       : never
     : never
 
-export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
-    | keyof DefaultSchema["Enums"]
-    | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-    : never
-
-export type CompositeTypes<
-  PublicCompositeTypeNameOrOptions extends
-    | keyof DefaultSchema["CompositeTypes"]
-    | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
-    schema: keyof DatabaseWithoutInternals
-  }
-    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
-> = PublicCompositeTypeNameOrOptions extends {
-  schema: keyof DatabaseWithoutInternals
-}
-  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
-  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-    : never
+export type Enums = Record<string, never>
+export type CompositeTypes = Record<string, never>
 
 export const Constants = {
   public: {
