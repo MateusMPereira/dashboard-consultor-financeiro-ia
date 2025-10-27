@@ -21,32 +21,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const getSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setAuthUser(session.user);
-        const { data: userProfile, error } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          setUser(null);
-        } else {
-          setUser(userProfile);
-        }
-      } else {
-        setUser(null);
-        setAuthUser(null);
-      }
-      setLoading(false);
-    };
-
-    getSession();
-
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+    setLoading(true);
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session) {
         setAuthUser(session.user);
         const { data: userProfile, error } = await supabase
