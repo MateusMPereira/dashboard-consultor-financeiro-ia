@@ -14,8 +14,8 @@ import {
 
 const financeMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "KPIs", url: "/kpis", icon: Target },
-  { title: "Alertas", url: "/alertas", icon: AlertTriangle },
+  { title: "KPIs", url: "/kpis", icon: Target, disabled: true },
+  { title: "Alertas", url: "/alertas", icon: AlertTriangle, disabled: true },
   { title: "Lançamentos", url: "/lancamentos", icon: Receipt },
 ];
 
@@ -50,17 +50,28 @@ export function AppSidebar() {
               {financeMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="h-11">
-                    <NavLink
-                      to={item.url}
-                      className={({ isActive }) =>
-                        isActive
-                          ? "bg-gradient-primary text-gray-900 dark:text-gray-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900"
-                          : "text-gray-900 dark:text-gray-900 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900 hover:bg-muted/80 transition-all duration-200 hover:translate-x-1"
-                      }
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span className="text-sm">{item.title}</span>
-                    </NavLink>
+                    {item.disabled ? (
+                      <span
+                        className={
+                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 text-muted-foreground cursor-not-allowed"
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm">{item.title}</span>
+                      </span>
+                    ) : (
+                      <NavLink
+                        to={item.url}
+                        className={({ isActive }) =>
+                          isActive
+                            ? "bg-gradient-primary text-gray-900 dark:text-gray-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900"
+                            : "text-gray-900 dark:text-gray-900 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900 hover:bg-muted/80 transition-all duration-200 hover:translate-x-1"
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm">{item.title}</span>
+                      </NavLink>
+                    )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
