@@ -2,6 +2,7 @@ import { useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react'
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 import { AuthContext } from '../contexts/AuthContext'; // Import AuthContext
+import { Session } from '@supabase/supabase-js';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
 type AuthUser = Database['auth']['Tables']['users']['Row'];
@@ -15,6 +16,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const storedAuthUser = localStorage.getItem('authUser');
     return storedAuthUser ? JSON.parse(storedAuthUser) : null;
   });
+  const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
 
   const setUser = (user: Usuario | null) => {
@@ -36,12 +38,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const handleSession = async (session: any) => {
-      if (session) {
+    const handleSession = async (currentSession: Session | null) => {
+      setSession(currentSession);
+      if (currentSession) {
         const { data: userProfileData, error } = await supabase
           .from('usuarios')
           .select('*')
-          .eq('auth_id', session.user.id)
+          .eq('auth_id', currentSession.user.id)
           .limit(1);
 
         const userProfile = userProfileData ? userProfileData[0] : null;
@@ -52,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setAuthUser(null);
         } else {
           setUser(userProfile);
-          setAuthUser(session.user);
+          setAuthUser(currentSession.user);
         }
       } else {
         setUser(null);
@@ -77,7 +80,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, authUser, loading, setAuthUser: setAuthUser as Dispatch<SetStateAction<AuthUser | null>>, setUser: setUser as Dispatch<SetStateAction<Usuario | null>> }}>
+    <AuthContext.Provider value={{ user, authUser, session, loading, setAuthUser: setAuthUser as Dispatch<SetStateAction<AuthUser | null>>, setUser: setUser as Dispatch<SetStateAction<Usuario | null>> }}>
       {children}
     </AuthContext.Provider>
   );
