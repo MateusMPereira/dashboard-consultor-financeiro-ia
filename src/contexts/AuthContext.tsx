@@ -22,7 +22,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setLoading(true);
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+
+    const handleSession = async (session: any) => {
       if (session) {
         setAuthUser(session.user);
         const { data: userProfile, error } = await supabase
@@ -42,6 +43,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setAuthUser(null);
       }
       setLoading(false);
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      handleSession(session);
+    });
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
+      handleSession(session);
     });
 
     return () => {
