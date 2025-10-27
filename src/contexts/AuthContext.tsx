@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -18,9 +17,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<Usuario | null>(null);
   const [authUser, setAuthUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
 
   useEffect(() => {
+    const getSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        setAuthUser(session.user);
+        const { data: userProfile, error } = await supabase
+          .from('usuarios')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          console.error('Error fetching user profile:', error);
+          setUser(null);
+        } else {
+          setUser(userProfile);
+        }
+      } else {
+        setUser(null);
+        setAuthUser(null);
+      }
+      setLoading(false);
+    };
+
+    getSession();
+
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session) {
         setAuthUser(session.user);
@@ -39,7 +62,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setUser(null);
         setAuthUser(null);
-        navigate('/auth');
       }
       setLoading(false);
     });
@@ -47,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ user, authUser, loading }}>
