@@ -12,7 +12,7 @@ import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { Lancamento, TipoLancamento, NaturezaLancamento, ClassificacaoLancamento, StatusLancamento } from "@/types/lancamento";
+import { Lancamento, TipoLancamento, NaturezaLancamento } from "@/types/lancamento";
 
 interface Category {
   id: string;
@@ -37,17 +37,12 @@ const Lancamentos = () => {
   const [formData, setFormData] = useState({
     tipo: "despesa" as TipoLancamento,
     natureza: "operacional" as NaturezaLancamento,
-    classificacao: "variavel" as ClassificacaoLancamento,
     descricao: "",
     valor: "",
     valor_liquido: "",
+    custo: "",
     impostos: "",
     data_referencia: format(new Date(), "yyyy-MM-dd"),
-    data_vencimento: format(new Date(), "yyyy-MM-dd"),
-    data_pagamento: "",
-    status: "pendente" as "pendente" | "pago" | "atrasado" | "cancelado",
-    forma_pagamento: "",
-    parcelas: "1",
     categoria_id: "",
     fornecedor_id: "",
   });
@@ -84,19 +79,12 @@ const Lancamentos = () => {
           fornecedor_id: tipedItem.fornecedor_id,
           tipo: (tipedItem.tipo || "despesa") as TipoLancamento,
           natureza: tipedItem.natureza as NaturezaLancamento || null,
-          classificacao: tipedItem.classificacao as ClassificacaoLancamento || null,
           descricao: tipedItem.descricao,
           valor: Number(tipedItem.valor),
           valor_liquido: tipedItem.valor_liquido ? Number(tipedItem.valor_liquido) : null,
+          custo: tipedItem.custo ? Number(tipedItem.custo) : null,
           impostos: tipedItem.impostos ? Number(tipedItem.impostos) : null,
           data_referencia: tipedItem.data_referencia,
-          data_vencimento: tipedItem.data_vencimento || null,
-          data_pagamento: tipedItem.data_pagamento || null,
-          status: (tipedItem.status || "pendente") as StatusLancamento,
-          forma_pagamento: tipedItem.forma_pagamento || null,
-          parcelas: tipedItem.parcelas ? Number(tipedItem.parcelas) : null,
-          parcela_atual: tipedItem.parcela_atual ? Number(tipedItem.parcela_atual) : null,
-          origem: tipedItem.origem,
           criado_por: tipedItem.criado_por,
           created_at: tipedItem.created_at,
           updated_at: tipedItem.updated_at,
@@ -124,23 +112,16 @@ const Lancamentos = () => {
       const lancamentoData = {
         tipo: formData.tipo,
         natureza: formData.natureza,
-        classificacao: formData.classificacao,
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
         valor_liquido: formData.valor_liquido ? parseFloat(formData.valor_liquido) : null,
+        custo: formData.custo ? parseFloat(formData.custo) : null,
         impostos: formData.impostos ? parseFloat(formData.impostos) : null,
         data_referencia: formData.data_referencia,
-        data_vencimento: formData.data_vencimento || null,
-        data_pagamento: formData.data_pagamento || null,
-        status: formData.status,
-        forma_pagamento: formData.forma_pagamento || null,
-        parcelas: formData.parcelas ? parseInt(formData.parcelas) : 1,
-        parcela_atual: 1,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
         usuario_id: user.id,
         empresa_id: user.empresa_id,
-        origem: "web",
         criado_por: authUser.email,
       };
 
@@ -172,17 +153,12 @@ const Lancamentos = () => {
     setFormData({
       tipo: lancamento.tipo,
       natureza: lancamento.natureza || "operacional",
-      classificacao: lancamento.classificacao || "variavel",
       descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
       valor_liquido: lancamento.valor_liquido?.toString() || "",
+      custo: lancamento.custo.toString(),
       impostos: lancamento.impostos?.toString() || "",
       data_referencia: lancamento.data_referencia,
-      data_vencimento: lancamento.data_vencimento || format(new Date(), "yyyy-MM-dd"),
-      data_pagamento: lancamento.data_pagamento || "",
-      status: lancamento.status as "pendente" | "pago" | "atrasado" | "cancelado" || "pendente",
-      forma_pagamento: lancamento.forma_pagamento || "",
-      parcelas: lancamento.parcelas?.toString() || "1",
       categoria_id: lancamento.categoria_id || "",
       fornecedor_id: lancamento.fornecedor_id || "",
     });
@@ -208,17 +184,12 @@ const Lancamentos = () => {
     setFormData({
       tipo: "despesa",
       natureza: "operacional",
-      classificacao: "variavel",
       descricao: "",
       valor: "",
       valor_liquido: "",
+      custo: "",
       impostos: "",
       data_referencia: format(new Date(), "yyyy-MM-dd"),
-      data_vencimento: format(new Date(), "yyyy-MM-dd"),
-      data_pagamento: "",
-      status: "pendente",
-      forma_pagamento: "",
-      parcelas: "1",
       categoria_id: "",
       fornecedor_id: "",
     });
@@ -300,26 +271,7 @@ const Lancamentos = () => {
                                   <Textarea
                                     value={formData.descricao}
                                     onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                                    required
                                   />
-                                </div>
-              
-                                <div>
-                                  <Label>Classificação</Label>
-                                  <Select
-                                    value={formData.classificacao}
-                                    onValueChange={(value: "fixa" | "variavel") =>
-                                      setFormData({ ...formData, classificacao: value })
-                                    }
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="fixa">Fixa</SelectItem>
-                                      <SelectItem value="variavel">Variável</SelectItem>
-                                    </SelectContent>
-                                  </Select>
                                 </div>
               
                                 <div>
@@ -332,71 +284,45 @@ const Lancamentos = () => {
                                     required
                                   />
                                 </div>
-              
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <div>
-                                    <Label>Data de Referência</Label>
-                                    <Input
-                                      type="date"
-                                      value={formData.data_referencia}
-                                      onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
-                                      required
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label>Data de Vencimento</Label>
-                                    <Input
-                                      type="date"
-                                      value={formData.data_vencimento}
-                                      onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label>Data de Pagamento</Label>
-                                    <Input
-                                      type="date"
-                                      value={formData.data_pagamento}
-                                      onChange={(e) => setFormData({ ...formData, data_pagamento: e.target.value })}
-                                    />
-                                  </div>
+
+                                <div>
+                                  <Label>Valor Líquido (R$)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.valor_liquido}
+                                    onChange={(e) => setFormData({ ...formData, valor_liquido: e.target.value })}
+                                  />
+                                </div>
+
+                                <div>
+                                  <Label>Custo (R$)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.custo}
+                                    onChange={(e) => setFormData({ ...formData, custo: e.target.value })}
+                                  />
                                 </div>
               
-                                <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-3 gap-4">
-                                  <div>
-                                    <Label>Status</Label>
-                                    <Select
-                                      value={formData.status}
-                                      onValueChange={(value: "pendente" | "pago" | "atrasado" | "cancelado") =>
-                                        setFormData({ ...formData, status: value })
-                                      }
-                                    >
-                                      <SelectTrigger>
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        <SelectItem value="pendente">Pendente</SelectItem>
-                                        <SelectItem value="pago">Pago</SelectItem>
-                                        <SelectItem value="atrasado">Atrasado</SelectItem>
-                                        <SelectItem value="cancelado">Cancelado</SelectItem>
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                  <div>
-                                    <Label>Forma de Pagamento</Label>
-                                    <Input
-                                      value={formData.forma_pagamento}
-                                      onChange={(e) => setFormData({ ...formData, forma_pagamento: e.target.value })}
-                                    />
-                                  </div>
-                                  <div>
-                                    <Label>Número de Parcelas</Label>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      value={formData.parcelas}
-                                      onChange={(e) => setFormData({ ...formData, parcelas: e.target.value })}
-                                    />
-                                  </div>
+                                <div>
+                                  <Label>Impostos (R$)</Label>
+                                  <Input
+                                    type="number"
+                                    step="0.01"
+                                    value={formData.impostos}
+                                    onChange={(e) => setFormData({ ...formData, impostos: e.target.value })}
+                                  />
+                                </div>
+
+                                <div>
+                                  <Label>Data de Referência</Label>
+                                  <Input
+                                    type="date"
+                                    value={formData.data_referencia}
+                                    onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
+                                    required
+                                  />
                                 </div>
               
                                 <div>

@@ -63,7 +63,7 @@ CREATE TABLE lancamentos (
     descricao TEXT,
     valor NUMERIC(14,2) NOT NULL,
     valor_liquido NUMERIC(14,2),
-    custo NUMERIC(14,2) NOT NULL,
+    custo NUMERIC(14,2),
     impostos NUMERIC(14,2),
     data_referencia DATE NOT NULL,
     criado_por VARCHAR(100),
