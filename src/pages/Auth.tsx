@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -13,26 +13,36 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { authUser } = useAuth();
-
-  useEffect(() => {
-    if (authUser) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [authUser, navigate]);
+  const { setAuthUser, setUser } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("User not found after sign in.");
+
+      setAuthUser(authData.user);
+
+      const { data: userProfile, error: profileError } = await supabase
+        .from('usuarios')
+        .select('*')
+        .eq('auth_id', authData.user.id)
+        .single();
+
+      if (profileError) throw profileError;
+
+      setUser(userProfile);
+
       toast.success("Login realizado com sucesso!");
+      navigate("/dashboard");
+
     } catch (error: any) {
       toast.error(error.message || "Erro ao fazer login");
     } finally {
@@ -80,3 +90,4 @@ const Auth = () => {
 };
 
 export default Auth;
+

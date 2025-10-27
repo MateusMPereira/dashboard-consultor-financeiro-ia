@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Database } from '@/integrations/supabase/types';
 
@@ -9,6 +9,8 @@ interface AuthContextType {
   user: Usuario | null;
   authUser: AuthUser | null;
   loading: boolean;
+  setAuthUser: Dispatch<SetStateAction<AuthUser | null>>;
+  setUser: Dispatch<SetStateAction<Usuario | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -72,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, authUser, loading }}>
+    <AuthContext.Provider value={{ user, authUser, loading, setAuthUser, setUser }}>
       {children}
     </AuthContext.Provider>
   );
