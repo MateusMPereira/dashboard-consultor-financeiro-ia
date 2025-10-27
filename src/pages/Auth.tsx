@@ -42,13 +42,17 @@ const Auth = () => {
 
       setAuthUser(authData.user);
 
-      const { data: userProfile, error: profileError } = await supabase
+      const { data: userProfileData, error: profileError } = await supabase
         .from('usuarios')
         .select('*')
         .eq('auth_id', authData.user.id)
-        .single();
+        .limit(1);
 
       if (profileError) throw profileError;
+
+      const userProfile = userProfileData ? userProfileData[0] : null;
+
+      if (!userProfile) throw new Error("User profile not found.");
 
       setUser(userProfile);
 

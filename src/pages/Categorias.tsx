@@ -57,7 +57,7 @@ const colorOptions = [
 ];
 
 const Categorias = () => {
-  const {user} = useAuth();
+  const {user, loading: authLoading} = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
   const [categories, setCategories] = useState<Categoria[]>([]);
@@ -70,12 +70,18 @@ const Categorias = () => {
   });
 
   useEffect(() => {
-    fetchCategories();
-  }, []);
+    if (!authLoading && user?.empresa_id) {
+      fetchCategories();
+    }
+  }, [authLoading, user?.empresa_id]);
 
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+      if (!user?.empresa_id) {
+        // This case should ideally not be reached due to the useEffect dependency, but as a safeguard
+        throw new Error("Empresa não encontrada");
+      }
 
       const { data, error } = await supabase
         .from("categorias")

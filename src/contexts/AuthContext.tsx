@@ -1,5 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode, Dispatch, SetStateAction } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+import { createContext, useContext, Dispatch, SetStateAction } from 'react';
 import { Database } from '@/integrations/supabase/types';
 
 type Usuario = Database['public']['Tables']['usuarios']['Row'];
@@ -13,57 +12,7 @@ interface AuthContextType {
   setUser: Dispatch<SetStateAction<Usuario | null>>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<Usuario | null>(null);
-  const [authUser, setAuthUser] = useState<AuthUser | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-
-    const handleSession = async (session: any) => {
-      if (session) {
-        setAuthUser(session.user);
-        const { data: userProfile, error } = await supabase
-          .from('usuarios')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-
-        if (error) {
-          console.error('Error fetching user profile:', error);
-          setUser(null);
-        } else {
-          setUser(userProfile);
-        }
-      } else {
-        setUser(null);
-        setAuthUser(null);
-      }
-      setLoading(false);
-    };
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      handleSession(session);
-    });
-
-    const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
-      handleSession(session);
-    });
-
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
-
-  return (
-    <AuthContext.Provider value={{ user, authUser, loading, setAuthUser, setUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
+export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function useAuth() {
   const context = useContext(AuthContext);

@@ -26,7 +26,7 @@ interface Supplier {
 }
 
 const Lancamentos = () => {
-  const {user, authUser} = useAuth();
+  const {user, authUser, loading: authLoading} = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -48,12 +48,18 @@ const Lancamentos = () => {
   });
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!authLoading && user?.empresa_id) {
+      fetchData();
+    }
+  }, [authLoading, user?.empresa_id]);
 
   const fetchData = async () => {
+    setLoading(true);
     try {
-      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+      if (!user?.empresa_id) {
+        // This case should ideally not be reached due to the useEffect dependency, but as a safeguard
+        throw new Error("Empresa não encontrada");
+      }
 
       const [lancamentosRes, categoriesRes, suppliersRes] = await Promise.all([
         supabase

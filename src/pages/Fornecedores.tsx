@@ -45,7 +45,7 @@ interface Supplier {
 }
 
 const Fornecedores = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -64,12 +64,18 @@ const Fornecedores = () => {
   });
 
   useEffect(() => {
-    fetchSuppliers();
-  }, []);
+    if (!authLoading && user?.empresa_id) {
+      fetchSuppliers();
+    }
+  }, [authLoading, user?.empresa_id]);
 
   const fetchSuppliers = async () => {
+    setLoading(true);
     try {
-      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+      if (!user?.empresa_id) {
+        // This case should ideally not be reached due to the useEffect dependency, but as a safeguard
+        throw new Error("Empresa não encontrada");
+      }
 
       const { data, error } = await supabase
         .from("fornecedores")
