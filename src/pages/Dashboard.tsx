@@ -3,6 +3,7 @@ import { Wallet, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { TransactionsList } from "@/components/dashboard/TransactionsList";
 import { ExpensesChart } from "@/components/dashboard/ExpensesChart";
+import { IncomesChart } from "@/components/dashboard/IncomesChart";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -18,6 +19,12 @@ interface Transaction {
 }
 
 interface ExpenseData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface IncomesData {
   name: string;
   value: number;
   color: string;
@@ -41,6 +48,7 @@ const Dashboard = () => {
     previousMonthExpenses: 0,
   });
   const [expensesChartData, setExpensesChartData] = useState<ExpenseData[]>([]);
+  const [incomesChartData, setIncomesChartData] = useState<IncomesData[]>([]);
   const [trendChartData, setTrendChartData] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -81,7 +89,6 @@ const Dashboard = () => {
 
       if (previousMonthError) throw previousMonthError;
 
-      // Process data
       const allLancamentos = [...(currentMonthLancamentos || []), ...(previousMonthLancamentos || [])];
 
       let totalBalance = 0;
@@ -91,6 +98,7 @@ const Dashboard = () => {
       let previousMonthExpenses = 0;
 
       const expensesByCategory: { [key: string]: number } = {};
+      const incomesByCategory: { [key: string]: number } = {};
       const trendDataMap: { [key: string]: { income: number; expenses: number } } = {};
 
       allLancamentos.forEach((lancamento: any) => {
@@ -102,6 +110,10 @@ const Dashboard = () => {
           totalBalance += amount;
           if (isCurrentMonth) currentMonthIncome += amount;
           if (isPreviousMonth) previousMonthIncome += amount;
+
+          if (isCurrentMonth && lancamento.categorias?.nome) {
+            incomesByCategory[lancamento.categorias.nome] = (incomesByCategory[lancamento.categorias.nome] || 0) + amount;
+          }
         } else {
           totalBalance -= amount;
           if (isCurrentMonth) currentMonthExpenses += amount;
@@ -135,14 +147,20 @@ const Dashboard = () => {
       setExpensesChartData(Object.keys(expensesByCategory).map(category => ({
         name: category,
         value: expensesByCategory[category],
-        color: "#" + Math.floor(Math.random()*16777215).toString(16), // Random color for now
+        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+      })));
+
+      setIncomesChartData(Object.keys(incomesByCategory).map(category => ({
+        name: category,
+        value: incomesByCategory[category],
+        color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
       setTrendChartData(Object.keys(trendDataMap).map(month => ({
         month,
         income: trendDataMap[month].income,
         expenses: trendDataMap[month].expenses,
-      })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime())); // Sort by month
+      })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
       setTransactions((currentMonthLancamentos || []).map((lancamento: any) => ({
         id: lancamento.id,
@@ -232,6 +250,7 @@ const Dashboard = () => {
       {/* Charts Grid */}
       <div className="grid gap-6 lg:grid-cols-2">
         <ExpensesChart data={expensesChartData} />
+        <IncomesChart data={incomesChartData} />
         <TrendChart data={trendChartData} />
       </div>
 
