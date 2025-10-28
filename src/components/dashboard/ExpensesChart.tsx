@@ -15,7 +15,7 @@ export function ExpensesChart({ data }: ExpensesChartProps) {
   return (
     <Card className="p-6 shadow-card">
       <h3 className="text-xl font-bold mb-4">Despesas por Categoria</h3>
-      <ResponsiveContainer width="100%" height={300}>
+      <ResponsiveContainer width="100%" height={250}>
         <PieChart>
           <Pie
             data={data}

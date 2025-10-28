@@ -248,10 +248,16 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
-        <ExpensesChart data={expensesChartData} />
-        <IncomesChart data={incomesChartData} />
-        <TrendChart data={trendChartData} />
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-[30%]">
+          <ExpensesChart data={expensesChartData} />
+        </div>
+        <div className="lg:w-[30%]">
+          <IncomesChart data={incomesChartData} />
+        </div>
+        <div className="lg:w-[40%]">
+          <TrendChart data={trendChartData} />
+        </div>
       </div>
 
       {/* Transactions Table */}
