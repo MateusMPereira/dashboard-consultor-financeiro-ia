@@ -162,7 +162,7 @@ const Lancamentos = () => {
       descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
       valor_liquido: lancamento.valor_liquido?.toString() || "",
-      custo: lancamento.custo.toString(),
+      custo: lancamento.custo?.toString() || "",
       impostos: lancamento.impostos?.toString() || "",
       data_referencia: lancamento.data_referencia,
       categoria_id: lancamento.categoria_id || "",
@@ -221,7 +221,7 @@ const Lancamentos = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button>
+            <Button onClick={resetForm}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Lançamento
             </Button>
