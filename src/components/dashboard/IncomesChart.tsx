@@ -22,7 +22,7 @@ export function IncomesChart({ data }: IncomesChartProps) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+            label={({ value }) => `R$ ${Number(value).toFixed(2)}`}
             outerRadius={80}
             fill="#8884d8"
             dataKey="value"
@@ -31,7 +31,7 @@ export function IncomesChart({ data }: IncomesChartProps) {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip formatter={(value) => `R$ ${Number(value).toFixed(2)}`} />
+          <Tooltip formatter={(value, name) => [`R$ ${Number(value).toFixed(2)}`, name]} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>
