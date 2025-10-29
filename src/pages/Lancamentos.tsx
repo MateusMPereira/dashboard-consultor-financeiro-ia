@@ -459,7 +459,7 @@ const Lancamentos = () => {
                       <span className="font-medium">{lancamento.descricao}</span>
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      {format(new Date(lancamento.data_referencia), "dd/MM/yyyy")}
+                      {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
                       {lancamento.categorias && ` • ${lancamento.categorias.nome}`}
                       {lancamento.fornecedores && ` • ${lancamento.fornecedores.nome}`}
                     </div>

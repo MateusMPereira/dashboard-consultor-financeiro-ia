@@ -76,7 +76,8 @@ const Dashboard = () => {
         .select("*, categorias(nome)")
         .eq("empresa_id", user.empresa_id)
         .gte("data_referencia", currentMonthStart)
-        .lte("data_referencia", currentMonthEnd);
+        .lte("data_referencia", currentMonthEnd)
+        .order("data_referencia", { ascending: false });
 
       if (currentMonthError) throw currentMonthError;
 
@@ -111,20 +112,22 @@ const Dashboard = () => {
           if (isCurrentMonth) currentMonthIncome += amount;
           if (isPreviousMonth) previousMonthIncome += amount;
 
-          if (isCurrentMonth && lancamento.categorias?.nome) {
-            incomesByCategory[lancamento.categorias.nome] = (incomesByCategory[lancamento.categorias.nome] || 0) + amount;
+          if (isCurrentMonth) {
+            const categoryName = lancamento.categorias?.nome || "Categoria não definida";
+            incomesByCategory[categoryName] = (incomesByCategory[categoryName] || 0) + amount;
           }
         } else {
           totalBalance -= amount;
           if (isCurrentMonth) currentMonthExpenses += amount;
           if (isPreviousMonth) previousMonthExpenses += amount;
 
-          if (isCurrentMonth && lancamento.categorias?.nome) {
-            expensesByCategory[lancamento.categorias.nome] = (expensesByCategory[lancamento.categorias.nome] || 0) + amount;
+          if (isCurrentMonth) {
+            const categoryName = lancamento.categorias?.nome || "Categoria não definida";
+            expensesByCategory[categoryName] = (expensesByCategory[categoryName] || 0) + amount;
           }
         }
 
-        const monthKey = format(new Date(lancamento.data_referencia), "MMM");
+        const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
         if (!trendDataMap[monthKey]) {
           trendDataMap[monthKey] = { income: 0, expenses: 0 };
         }
@@ -162,14 +165,17 @@ const Dashboard = () => {
         expenses: trendDataMap[month].expenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
-      setTransactions((currentMonthLancamentos || []).map((lancamento: any) => ({
-        id: lancamento.id,
-        description: lancamento.descricao,
-        category: lancamento.categorias?.nome || "N/A",
-        amount: parseFloat(lancamento.valor),
-        date: format(new Date(lancamento.data_referencia), "dd/MM/yyyy"),
-        type: lancamento.tipo === "receita" ? "income" : "expense",
-      })));
+      setTransactions((currentMonthLancamentos || [])
+        .map((lancamento: any) => ({
+          id: lancamento.id,
+          description: lancamento.descricao,
+          category: lancamento.categorias?.nome || "N/A",
+          amount: parseFloat(lancamento.valor),
+          date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
+          type: lancamento.tipo === "receita" ? "income" : "expense",
+        }))
+        .slice(0, 4)
+      );
 
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error.message);
