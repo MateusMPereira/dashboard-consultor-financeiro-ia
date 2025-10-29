@@ -209,6 +209,8 @@ const Lancamentos = () => {
     .filter((l) => l.tipo === "despesa")
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
+  const filteredCategories = categories.filter(cat => cat.tipo === formData.tipo);
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -239,9 +241,13 @@ const Lancamentos = () => {
                                   <Label>Tipo</Label>
                                   <Select
                                     value={formData.tipo}
-                                    onValueChange={(value: "receita" | "despesa") =>
-                                      setFormData({ ...formData, tipo: value })
-                                    }
+                                    onValueChange={(value: "receita" | "despesa") => {
+                                      setFormData(prev => ({
+                                        ...prev,
+                                        tipo: value,
+                                        categoria_id: "",
+                                      }));
+                                    }}
                                   >
                                     <SelectTrigger>
                                       <SelectValue />
@@ -341,12 +347,12 @@ const Lancamentos = () => {
                                       <SelectValue placeholder={categories.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione..."} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {categories.length === 0 ? (
+                                      {filteredCategories.length === 0 ? (
                                         <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                          Nenhuma categoria cadastrada.<br />Cadastre na página Categorias.
+                                          Nenhuma categoria cadastrada para este tipo.<br />Cadastre na página Categorias.
                                         </div>
                                       ) : (
-                                        categories.map((cat) => (
+                                        filteredCategories.map((cat) => (
                                           <SelectItem key={cat.id} value={cat.id}>
                                             {cat.nome}
                                           </SelectItem>
