@@ -26,7 +26,7 @@ const registrationMenuItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar collapsible="icon" className="border-r shadow-elegant">
+    <Sidebar className="border-r shadow-elegant">
       <SidebarHeader className="border-b border-border/50 p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-md">
