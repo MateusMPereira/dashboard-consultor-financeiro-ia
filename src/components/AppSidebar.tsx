@@ -33,8 +33,8 @@ export function AppSidebar() {
             <TrendingUp className="h-5 w-5 text-primary-foreground" />
           </div>
           <div className="flex flex-col group-data-[collapsible=icon]:hidden">
-            <h2 className="text-base font-bold text-foreground">FinanceDash</h2>
-            <p className="text-xs text-muted-foreground">Analytics Platform</p>
+            <h2 className="text-base font-bold text-foreground">Gestão Financeira</h2>
+            <p className="text-xs text-muted-foreground">Plataforma Analítica</p>
           </div>
         </div>
       </SidebarHeader>
