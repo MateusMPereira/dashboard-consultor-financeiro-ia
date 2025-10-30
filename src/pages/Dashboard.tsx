@@ -144,24 +144,13 @@ const Dashboard = () => {
           category: lancamento.categorias?.nome || "N/A",
           amount: parseFloat(lancamento.valor),
           date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
-          type: lancamento.tipo === "receita" ? "income" : "expense",
+          type: (lancamento.tipo === "receita" ? "income" : "expense") as "income" | "expense",
         }))
         .slice(0, 4)
       );
 
-      /**
-       * 
-        id: string;
-        description: string;
-        category: string;
-        amount: number;
-        date: string;
-        type: "income" | "expense";
-       */
-
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error.message);
-      // toast.error("Erro ao carregar dados do dashboard: " + error.message);
     } finally {
       setLoading(false);
     }
