@@ -10,7 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-interface Transaction {
+export interface Transaction {
   id: string;
   description: string;
   category: string;

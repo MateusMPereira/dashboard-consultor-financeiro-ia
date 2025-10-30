@@ -14,8 +14,8 @@ interface ExpensesChartProps {
 export function ExpensesChart({ data }: ExpensesChartProps) {
   return (
     <Card className="p-6 shadow-card">
-      <h3 className="text-xl font-bold mb-4">Despesas por Categoria</h3>
-      <ResponsiveContainer width="100%" height={250}>
+      <h3 className="text-xl font-bold mb-4">Despesas por Natureza</h3>
+      <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
             data={data}

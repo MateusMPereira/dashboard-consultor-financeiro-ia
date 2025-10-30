@@ -14,8 +14,9 @@ interface TrendChartProps {
 export function TrendChart({ data }: TrendChartProps) {
   return (
     <Card className="p-6 shadow-card">
-      <h3 className="text-xl font-bold mb-4">Evolução Mensal</h3>
-      <ResponsiveContainer width="100%" height={250}>
+      <h3 className="text-xl font-bold">Receita vs CMV</h3>
+      <h6 className="text-md mb-4">Últimos 6 meses</h6>
+      <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
           <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
           <XAxis dataKey="month" className="text-muted-foreground" />
@@ -35,10 +36,10 @@ export function TrendChart({ data }: TrendChartProps) {
           />
           <Line
             type="monotone"
-            dataKey="expenses"
+            dataKey="cmv"
             stroke="hsl(var(--destructive))"
             strokeWidth={2}
-            name="Despesas"
+            name="CMV"
             dot={{ fill: "hsl(var(--destructive))" }}
           />
         </LineChart>

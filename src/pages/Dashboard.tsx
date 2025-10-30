@@ -1,30 +1,15 @@
 import { useState, useEffect } from "react";
-import { Wallet, TrendingUp, TrendingDown, DollarSign } from "lucide-react";
+import { PieChart, ShoppingCart, Calculator, DollarSign, Target } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { TransactionsList } from "@/components/dashboard/TransactionsList";
 import { ExpensesChart } from "@/components/dashboard/ExpensesChart";
-import { IncomesChart } from "@/components/dashboard/IncomesChart";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
-
-interface Transaction {
-  id: string;
-  description: string;
-  category: string;
-  amount: number;
-  date: string;
-  type: "income" | "expense";
-}
+import { Transaction } from "@/components/dashboard/TransactionsList";
 
 interface ExpenseData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface IncomesData {
   name: string;
   value: number;
   color: string;
@@ -48,7 +33,6 @@ const Dashboard = () => {
     previousMonthExpenses: 0,
   });
   const [expensesChartData, setExpensesChartData] = useState<ExpenseData[]>([]);
-  const [incomesChartData, setIncomesChartData] = useState<IncomesData[]>([]);
   const [trendChartData, setTrendChartData] = useState<TrendData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -98,8 +82,7 @@ const Dashboard = () => {
       let previousMonthIncome = 0;
       let previousMonthExpenses = 0;
 
-      const expensesByCategory: { [key: string]: number } = {};
-      const incomesByCategory: { [key: string]: number } = {};
+      const expensesByNature: { [key: string]: number } = {};
       const trendDataMap: { [key: string]: { income: number; expenses: number } } = {};
 
       allLancamentos.forEach((lancamento: any) => {
@@ -111,11 +94,6 @@ const Dashboard = () => {
           totalBalance += amount;
           if (isCurrentMonth) currentMonthIncome += amount;
           if (isPreviousMonth) previousMonthIncome += amount;
-
-          if (isCurrentMonth) {
-            const categoryName = lancamento.categorias?.nome || "Categoria não definida";
-            incomesByCategory[categoryName] = (incomesByCategory[categoryName] || 0) + amount;
-          }
         } else {
           totalBalance -= amount;
           if (isCurrentMonth) currentMonthExpenses += amount;
@@ -123,7 +101,7 @@ const Dashboard = () => {
 
           if (isCurrentMonth) {
             const categoryName = lancamento.categorias?.nome || "Categoria não definida";
-            expensesByCategory[categoryName] = (expensesByCategory[categoryName] || 0) + amount;
+            expensesByNature[categoryName] = (expensesByNature[categoryName] || 0) + amount;
           }
         }
 
@@ -147,15 +125,9 @@ const Dashboard = () => {
         previousMonthExpenses,
       });
 
-      setExpensesChartData(Object.keys(expensesByCategory).map(category => ({
-        name: category,
-        value: expensesByCategory[category],
-        color: "#" + Math.floor(Math.random()*16777215).toString(16),
-      })));
-
-      setIncomesChartData(Object.keys(incomesByCategory).map(category => ({
-        name: category,
-        value: incomesByCategory[category],
+      setExpensesChartData(Object.keys(expensesByNature).map(nature => ({
+        name: nature,
+        value: expensesByNature[nature],
         color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
@@ -177,6 +149,16 @@ const Dashboard = () => {
         .slice(0, 4)
       );
 
+      /**
+       * 
+        id: string;
+        description: string;
+        category: string;
+        amount: number;
+        date: string;
+        type: "income" | "expense";
+       */
+
     } catch (error: any) {
       console.error("Error fetching dashboard data:", error.message);
       // toast.error("Erro ao carregar dados do dashboard: " + error.message);
@@ -196,8 +178,8 @@ const Dashboard = () => {
   };
 
   const getExpenseChangeType = (current: number, previous: number) => {
-    if (current > previous) return "negative"; // More expenses is negative
-    if (current < previous) return "positive"; // Less expenses is positive
+    if (current > previous) return "negative";
+    if (current < previous) return "positive";
     return "neutral";
   };
 
@@ -218,50 +200,55 @@ const Dashboard = () => {
   return (
     <div className="space-y-8">
       {/* Metrics Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <MetricCard
-          title="Saldo Total"
+          title="Receita Líquida"
           value={formatCurrency(metrics.totalBalance)}
-          change="" // Total balance doesn't have a direct month-over-month change in this context
+          change=""
           changeType="neutral"
-          icon={Wallet}
+          icon={DollarSign}
           variant="default"
         />
         <MetricCard
-          title="Receitas"
+          title="CMV Total"
           value={formatCurrency(metrics.currentMonthIncome)}
           change={getChangeValue(metrics.currentMonthIncome, metrics.previousMonthIncome)}
           changeType={getChangeType(metrics.currentMonthIncome, metrics.previousMonthIncome)}
-          icon={TrendingUp}
-          variant="success"
-        />
-        <MetricCard
-          title="Despesas"
-          value={formatCurrency(metrics.currentMonthExpenses)}
-          change={getChangeValue(metrics.currentMonthExpenses, metrics.previousMonthExpenses)}
-          changeType={getExpenseChangeType(metrics.currentMonthExpenses, metrics.previousMonthExpenses)}
-          icon={TrendingDown}
+          icon={ShoppingCart}
           variant="destructive"
         />
         <MetricCard
-          title="Economia"
+          title="Despesas Operacionais"
+          value={formatCurrency(metrics.currentMonthExpenses)}
+          change={getChangeValue(metrics.currentMonthExpenses, metrics.previousMonthExpenses)}
+          changeType={getExpenseChangeType(metrics.currentMonthExpenses, metrics.previousMonthExpenses)}
+          icon={Calculator}
+          variant="destructive"
+        />
+        <MetricCard
+          title="Marge de Contribuição"
           value={formatCurrency(metrics.currentMonthSavings)}
           change={getChangeValue(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
           changeType={getChangeType(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
-          icon={DollarSign}
+          icon={PieChart}
+          variant="destructive"
+        />
+        <MetricCard
+          title="Ebitda"
+          value={formatCurrency(metrics.currentMonthSavings)}
+          change={getChangeValue(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
+          changeType={getChangeType(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
+          icon={Target}
           variant="success"
         />
       </div>
 
       {/* Charts Grid */}
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-[30%]">
+        <div className="lg:w-[40%]">
           <ExpensesChart data={expensesChartData} />
         </div>
-        <div className="lg:w-[30%]">
-          <IncomesChart data={incomesChartData} />
-        </div>
-        <div className="lg:w-[40%]">
+        <div className="lg:w-[60%]">
           <TrendChart data={trendChartData} />
         </div>
       </div>
