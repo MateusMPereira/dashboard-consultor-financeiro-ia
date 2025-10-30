@@ -1,3 +1,4 @@
+# Etapa 1 - Build
 FROM node:18-alpine AS builder
 WORKDIR /app
 
@@ -7,14 +8,11 @@ RUN npm ci --silent || npm install --silent
 COPY . .
 RUN npm run build
 
-FROM node:18-alpine AS runner
-WORKDIR /app
+# Etapa 2 - Servidor Web
+FROM nginx:alpine AS runner
+WORKDIR /usr/share/nginx/html
 
-ENV NODE_ENV=production
-ENV PORT=80
-ENV HOST=0.0.0.0
-
-COPY --from=builder /app ./
+COPY --from=builder /app/dist ./
 
 EXPOSE 80
-CMD ["node", "node_modules/next/dist/bin/next", "start", "-p", "80", "-H", "0.0.0.0"]
+CMD ["nginx", "-g", "daemon off;"]
