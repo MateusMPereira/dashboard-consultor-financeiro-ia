@@ -25,12 +25,17 @@ const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [metrics, setMetrics] = useState({
-    totalBalance: 0,
-    currentMonthIncome: 0,
-    currentMonthExpenses: 0,
-    currentMonthSavings: 0,
-    previousMonthIncome: 0,
-    previousMonthExpenses: 0,
+    netIncomes: 0,
+    previousNetIncomes: 0,
+    totalCMV: 0,
+    cmvIncomesSlice: 0,
+    previousTotalCMV: 0,
+    operatingExpenses: 0,
+    previousOperatingExpenses: 0,
+    contributionMargin: 0,
+    previousContributionMargin: 0,
+    ebitda: 0,
+    previousEbitda: 0,
   });
   const [expensesChartData, setExpensesChartData] = useState<ExpenseData[]>([]);
   const [trendChartData, setTrendChartData] = useState<TrendData[]>([]);
@@ -76,11 +81,17 @@ const Dashboard = () => {
 
       const allLancamentos = [...(currentMonthLancamentos || []), ...(previousMonthLancamentos || [])];
 
-      let totalBalance = 0;
-      let currentMonthIncome = 0;
-      let currentMonthExpenses = 0;
-      let previousMonthIncome = 0;
-      let previousMonthExpenses = 0;
+      let netIncomes = 0;
+      let previousNetIncomes = 0
+      let totalCMV = 0;
+      let cmvIncomesSlice = 0;
+      let previousTotalCMV = 0;
+      let operatingExpenses = 0;
+      let previousOperatingExpenses = 0;
+      let contributionMargin = 0;
+      let previousContributionMargin = 0;
+      let ebitda = 0;
+      let previousEbitda = 0;
 
       const expensesByNature: { [key: string]: number } = {};
       const trendDataMap: { [key: string]: { income: number; expenses: number } } = {};
@@ -91,16 +102,12 @@ const Dashboard = () => {
         const isPreviousMonth = lancamento.data_referencia >= previousMonthStart && lancamento.data_referencia <= previousMonthEnd;
 
         if (lancamento.tipo === "receita") {
-          totalBalance += amount;
-          if (isCurrentMonth) currentMonthIncome += amount;
-          if (isPreviousMonth) previousMonthIncome += amount;
+          if (isCurrentMonth) netIncomes += amount;
+          if (isPreviousMonth) previousNetIncomes += amount;
         } else {
-          totalBalance -= amount;
-          if (isCurrentMonth) currentMonthExpenses += amount;
-          if (isPreviousMonth) previousMonthExpenses += amount;
 
           if (isCurrentMonth) {
-            const categoryName = lancamento.categorias?.nome || "Categoria não definida";
+            const categoryName = lancamento.categorias?.nome || "Natureza não definida";
             expensesByNature[categoryName] = (expensesByNature[categoryName] || 0) + amount;
           }
         }
@@ -114,15 +121,20 @@ const Dashboard = () => {
         } else {
           trendDataMap[monthKey].expenses += amount;
         }
-      });
+      });      
 
       setMetrics({
-        totalBalance,
-        currentMonthIncome,
-        currentMonthExpenses,
-        currentMonthSavings: currentMonthIncome - currentMonthExpenses,
-        previousMonthIncome,
-        previousMonthExpenses,
+        netIncomes,
+        previousNetIncomes,
+        totalCMV,
+        cmvIncomesSlice: (netIncomes > 0) ? totalCMV * (netIncomes / 100) : 0,
+        previousTotalCMV,
+        operatingExpenses,
+        previousOperatingExpenses: 0,
+        contributionMargin,
+        previousContributionMargin,
+        ebitda,
+        previousEbitda
       });
 
       setExpensesChartData(Object.keys(expensesByNature).map(nature => ({
@@ -192,7 +204,7 @@ const Dashboard = () => {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <MetricCard
           title="Receita Líquida"
-          value={formatCurrency(metrics.totalBalance)}
+          value={formatCurrency(metrics.netIncomes)}
           change=""
           changeType="neutral"
           icon={DollarSign}
@@ -200,33 +212,33 @@ const Dashboard = () => {
         />
         <MetricCard
           title="CMV Total"
-          value={formatCurrency(metrics.currentMonthIncome)}
-          change={getChangeValue(metrics.currentMonthIncome, metrics.previousMonthIncome)}
-          changeType={getChangeType(metrics.currentMonthIncome, metrics.previousMonthIncome)}
+          value={formatCurrency(metrics.totalCMV)}
+          change={getChangeValue(metrics.totalCMV, metrics.previousTotalCMV)}
+          changeType={getChangeType(metrics.totalCMV, metrics.previousTotalCMV)}
           icon={ShoppingCart}
           variant="destructive"
         />
         <MetricCard
           title="Despesas Operacionais"
-          value={formatCurrency(metrics.currentMonthExpenses)}
-          change={getChangeValue(metrics.currentMonthExpenses, metrics.previousMonthExpenses)}
-          changeType={getExpenseChangeType(metrics.currentMonthExpenses, metrics.previousMonthExpenses)}
+          value={formatCurrency(metrics.operatingExpenses)}
+          change={getChangeValue(metrics.operatingExpenses, metrics.previousOperatingExpenses)}
+          changeType={getExpenseChangeType(metrics.operatingExpenses, metrics.previousOperatingExpenses)}
           icon={Calculator}
           variant="destructive"
         />
         <MetricCard
           title="Marge de Contribuição"
-          value={formatCurrency(metrics.currentMonthSavings)}
-          change={getChangeValue(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
-          changeType={getChangeType(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
+          value={formatCurrency(metrics.contributionMargin)}
+          change={getChangeValue(metrics.contributionMargin, metrics.previousContributionMargin)}
+          changeType={getChangeType(metrics.contributionMargin, metrics.previousContributionMargin)}
           icon={PieChart}
           variant="destructive"
         />
         <MetricCard
           title="Ebitda"
-          value={formatCurrency(metrics.currentMonthSavings)}
-          change={getChangeValue(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
-          changeType={getChangeType(metrics.currentMonthSavings, metrics.previousMonthIncome - metrics.previousMonthExpenses)}
+          value={formatCurrency(metrics.ebitda)}
+          change={getChangeValue(metrics.ebitda, metrics.previousEbitda)}
+          changeType={getChangeType(metrics.ebitda, metrics.previousEbitda)}
           icon={Target}
           variant="success"
         />

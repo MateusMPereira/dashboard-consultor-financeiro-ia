@@ -29,6 +29,7 @@ CREATE TABLE categorias (
     icone VARCHAR(50),
     descricao TEXT,
     ativo BOOLEAN DEFAULT TRUE,
+    natureza VARCHAR(25) CHECK (natureza IN ('cmv', 'custo_operacional', 'impostos')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
@@ -59,12 +60,8 @@ CREATE TABLE lancamentos (
     categoria_id UUID REFERENCES categorias(id),
     fornecedor_id UUID REFERENCES fornecedores(id),
     tipo VARCHAR(20) CHECK (tipo IN ('receita', 'despesa')) NOT NULL,
-    natureza VARCHAR(30) CHECK (natureza IN ('operacional', 'financeira', 'investimento')),
     descricao TEXT,
     valor NUMERIC(14,2) NOT NULL,
-    valor_liquido NUMERIC(14,2),
-    custo NUMERIC(14,2),
-    impostos NUMERIC(14,2),
     data_referencia DATE NOT NULL,
     criado_por VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW(),
