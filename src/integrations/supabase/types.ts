@@ -137,11 +137,9 @@ export type Database = {
           usuario_id: string | null
           empresa_id: string
           nome: string
-          tipo: string
-          cor: string | null
-          icone: string | null
           descricao: string | null
           ativo: boolean
+          natureza_id: string
           created_at: string
           updated_at: string | null
         }
@@ -150,11 +148,9 @@ export type Database = {
           usuario_id?: string | null
           empresa_id: string
           nome: string
-          tipo: string
-          cor?: string | null
-          icone?: string | null
           descricao?: string | null
           ativo?: boolean
+          natureza_id: string
           created_at?: string
           updated_at?: string | null
         }
@@ -163,11 +159,9 @@ export type Database = {
           usuario_id?: string | null
           empresa_id?: string
           nome?: string
-          tipo?: string
-          cor?: string | null
-          icone?: string | null
           descricao?: string | null
           ativo?: boolean
+          natureza_id?: string
           created_at?: string
           updated_at?: string | null
         }
@@ -184,6 +178,13 @@ export type Database = {
             columns: ["empresa_id"]
             isOneToOne: false
             referencedRelation: "empresas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categorias_natureza_id_fkey"
+            columns: ["natureza_id"]
+            isOneToOne: false
+            referencedRelation: "naturezas"
             referencedColumns: ["id"]
           }
         ]
@@ -263,57 +264,38 @@ export type Database = {
       lancamentos: {
         Row: {
           id: string
-          usuario_id: string | null
           empresa_id: string
           categoria_id: string | null
           fornecedor_id: string | null
-          tipo: string
           descricao: string | null
           valor: number
           data_referencia: string
-          origem: string | null
-          criado_por: string | null
           created_at: string
           updated_at: string | null
         }
         Insert: {
           id?: string
-          usuario_id?: string | null
           empresa_id: string
           categoria_id?: string | null
           fornecedor_id?: string | null
-          tipo: string
           descricao?: string | null
           valor: number
           data_referencia: string
-          origem?: string | null
-          criado_por?: string | null
           created_at?: string
           updated_at?: string | null
         }
         Update: {
           id?: string
-          usuario_id?: string | null
           empresa_id?: string
           categoria_id?: string | null
           fornecedor_id?: string | null
-          tipo?: string
           descricao?: string | null
           valor?: number
           data_referencia?: string
-          origem?: string | null
-          criado_por?: string | null
           created_at?: string
           updated_at?: string | null
         }
         Relationships: [
-          {
-            foreignKeyName: "lancamentos_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "lancamentos_empresa_id_fkey"
             columns: ["empresa_id"]
@@ -675,6 +657,30 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
+      },
+      naturezas: {
+        Row: {
+          id: string
+          descricao: string | null
+          tipo: "receita" | "despesa" | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          descricao?: string | null
+          tipo?: "receita" | "despesa" | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          descricao?: string | null
+          tipo?: "receita" | "despesa" | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
