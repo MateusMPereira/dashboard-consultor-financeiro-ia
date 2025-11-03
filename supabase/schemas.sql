@@ -24,12 +24,9 @@ CREATE TABLE categorias (
     usuario_id UUID REFERENCES usuarios(id),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     nome VARCHAR(100) NOT NULL,
-    tipo VARCHAR(20) CHECK (tipo IN ('receita', 'despesa')),
-    cor VARCHAR(7),
-    icone VARCHAR(50),
     descricao TEXT,
     ativo BOOLEAN DEFAULT TRUE,
-    natureza VARCHAR(25) CHECK (natureza IN ('cmv', 'custo_operacional', 'impostos')),
+    natureza_id UUID NOT NULL REFERENCES naturezas(id) ON DELETE CASCADE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
@@ -55,15 +52,12 @@ CREATE TABLE fornecedores (
 
 CREATE TABLE lancamentos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    usuario_id UUID REFERENCES usuarios(id),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     categoria_id UUID REFERENCES categorias(id),
     fornecedor_id UUID REFERENCES fornecedores(id),
-    tipo VARCHAR(20) CHECK (tipo IN ('receita', 'despesa')) NOT NULL,
     descricao TEXT,
     valor NUMERIC(14,2) NOT NULL,
     data_referencia DATE NOT NULL,
-    criado_por VARCHAR(100),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
@@ -149,6 +143,14 @@ CREATE TABLE log_ia (
     acao VARCHAR(100),
     resultado TEXT,
     sucesso BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT NOW(),
+    updated_at TIMESTAMP
+);
+
+CREATE TABLE naturezas (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    descricao TEXT,
+    tipo VARCHAR(20) CHECK (tipo IN ('receita', 'despesa')),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
