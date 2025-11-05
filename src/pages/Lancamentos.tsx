@@ -12,12 +12,14 @@ import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { Lancamento, TipoLancamento, NaturezaLancamento } from "@/types/lancamento";
+import { Lancamento, TipoLancamento } from "@/types/lancamento";
 
 interface Category {
   id: string;
   nome: string;
-  tipo: string;
+  naturezas: {
+    tipo: "receita" | "despesa" | null;
+  } | null;
 }
 
 interface Supplier {
@@ -26,22 +28,18 @@ interface Supplier {
 }
 
 const Lancamentos = () => {
-  const {user, authUser, loading: authLoading} = useAuth();
+  const {user, loading: authLoading} = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLancamento, setEditingLancamento] = useState<Lancamento | null>(null);
+  const [tipoFiltro, setTipoFiltro] = useState<TipoLancamento>('despesa');
 
   const [formData, setFormData] = useState({
-    tipo: "despesa" as TipoLancamento,
-    natureza: "operacional" as NaturezaLancamento,
     descricao: "",
     valor: "",
-    valor_liquido: "",
-    custo: "",
-    impostos: "",
     data_referencia: format(new Date(), "yyyy-MM-dd"),
     categoria_id: "",
     fornecedor_id: "",
@@ -57,17 +55,16 @@ const Lancamentos = () => {
     setLoading(true);
     try {
       if (!user?.empresa_id) {
-        // This case should ideally not be reached due to the useEffect dependency, but as a safeguard
         throw new Error("Empresa não encontrada");
       }
 
       const [lancamentosRes, categoriesRes, suppliersRes] = await Promise.all([
         supabase
           .from("lancamentos")
-          .select("*, categorias(nome), fornecedores(nome)")
+          .select("*, categorias(*, naturezas(*)), fornecedores(*)")
           .filter("empresa_id", "eq", user.empresa_id)
           .order("data_referencia", { ascending: false }),
-        supabase.from("categorias").select("*"),
+        supabase.from("categorias").select("*, naturezas(*)"),
         supabase.from("fornecedores").select("*"),
       ]);
 
@@ -75,29 +72,10 @@ const Lancamentos = () => {
       if (categoriesRes.error) throw categoriesRes.error;
       if (suppliersRes.error) throw suppliersRes.error;
 
-      const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map(item => {
-        const tipedItem = item as any;
-        return {
-          id: tipedItem.id,
-          usuario_id: tipedItem.usuario_id,
-          empresa_id: tipedItem.empresa_id,
-          categoria_id: tipedItem.categoria_id,
-          fornecedor_id: tipedItem.fornecedor_id,
-          tipo: (tipedItem.tipo || "despesa") as TipoLancamento,
-          natureza: tipedItem.natureza as NaturezaLancamento || null,
-          descricao: tipedItem.descricao,
-          valor: Number(tipedItem.valor),
-          valor_liquido: tipedItem.valor_liquido ? Number(tipedItem.valor_liquido) : null,
-          custo: tipedItem.custo ? Number(tipedItem.custo) : null,
-          impostos: tipedItem.impostos ? Number(tipedItem.impostos) : null,
-          data_referencia: tipedItem.data_referencia,
-          criado_por: tipedItem.criado_por,
-          created_at: tipedItem.created_at,
-          updated_at: tipedItem.updated_at,
-          categorias: tipedItem.categorias,
-          fornecedores: tipedItem.fornecedores
-        };
-      });
+      const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map((item: any) => ({
+        ...item,
+        tipo: item.categorias?.naturezas?.tipo,
+      }));
 
       setLancamentos(lancamentosData);
       setCategories(categoriesRes.data || []);
@@ -116,19 +94,12 @@ const Lancamentos = () => {
       if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
       const lancamentoData = {
-        tipo: formData.tipo,
-        natureza: formData.natureza,
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
-        valor_liquido: formData.valor_liquido ? parseFloat(formData.valor_liquido) : null,
-        custo: formData.custo ? parseFloat(formData.custo) : null,
-        impostos: formData.impostos ? parseFloat(formData.impostos) : null,
         data_referencia: formData.data_referencia,
         categoria_id: formData.categoria_id || null,
         fornecedor_id: formData.fornecedor_id || null,
-        usuario_id: user.id,
         empresa_id: user.empresa_id,
-        criado_por: authUser.email,
       };
 
       if (editingLancamento) {
@@ -140,7 +111,7 @@ const Lancamentos = () => {
         if (error) throw error;
         toast.success("Lançamento atualizado com sucesso!");
       } else {
-        const { error } = await supabase.from("lancamentos").insert(lancamentoData);
+        const { error } = await supabase.from("lancamentos").insert([lancamentoData]);
 
         if (error) throw error;
         toast.success("Lançamento criado com sucesso!");
@@ -157,13 +128,8 @@ const Lancamentos = () => {
   const handleEdit = (lancamento: Lancamento) => {
     setEditingLancamento(lancamento);
     setFormData({
-      tipo: lancamento.tipo,
-      natureza: lancamento.natureza || "operacional",
       descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
-      valor_liquido: lancamento.valor_liquido?.toString() || "",
-      custo: lancamento.custo?.toString() || "",
-      impostos: lancamento.impostos?.toString() || "",
       data_referencia: lancamento.data_referencia,
       categoria_id: lancamento.categoria_id || "",
       fornecedor_id: lancamento.fornecedor_id || "",
@@ -188,13 +154,8 @@ const Lancamentos = () => {
   const resetForm = () => {
     setEditingLancamento(null);
     setFormData({
-      tipo: "despesa",
-      natureza: "operacional",
       descricao: "",
       valor: "",
-      valor_liquido: "",
-      custo: "",
-      impostos: "",
       data_referencia: format(new Date(), "yyyy-MM-dd"),
       categoria_id: "",
       fornecedor_id: "",
@@ -209,7 +170,7 @@ const Lancamentos = () => {
     .filter((l) => l.tipo === "despesa")
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
-  const filteredCategories = categories.filter(cat => cat.tipo === formData.tipo);
+  const filteredCategories = categories.filter(cat => cat.naturezas?.tipo === tipoFiltro);
 
   return (
     <div className="space-y-6">
@@ -240,11 +201,11 @@ const Lancamentos = () => {
                                 <div>
                                   <Label>Tipo</Label>
                                   <Select
-                                    value={formData.tipo}
+                                    value={tipoFiltro}
                                     onValueChange={(value: "receita" | "despesa") => {
+                                      setTipoFiltro(value);
                                       setFormData(prev => ({
                                         ...prev,
-                                        tipo: value,
                                         categoria_id: "",
                                       }));
                                     }}
@@ -259,25 +220,6 @@ const Lancamentos = () => {
                                   </Select>
                                 </div>
               
-                                <div>
-                                  <Label>Natureza</Label>
-                                  <Select
-                                    value={formData.natureza}
-                                    onValueChange={(value: "operacional" | "financeira" | "investimento") =>
-                                      setFormData({ ...formData, natureza: value })
-                                    }
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="operacional">Operacional</SelectItem>
-                                      <SelectItem value="financeira">Financeira</SelectItem>
-                                      <SelectItem value="investimento">Investimento</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-              
                                 <div className="md:col-span-2">
                                   <Label>Descrição</Label>
                                   <Textarea
@@ -287,43 +229,13 @@ const Lancamentos = () => {
                                 </div>
               
                                 <div>
-                                  <Label>Valor Bruto (R$)</Label>
+                                  <Label>Valor (R$)</Label>
                                   <Input
                                     type="number"
                                     step="0.01"
                                     value={formData.valor}
                                     onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
                                     required
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label>Valor Líquido (R$)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.valor_liquido}
-                                    onChange={(e) => setFormData({ ...formData, valor_liquido: e.target.value })}
-                                  />
-                                </div>
-
-                                <div>
-                                  <Label>Custo (R$)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.custo}
-                                    onChange={(e) => setFormData({ ...formData, custo: e.target.value })}
-                                  />
-                                </div>
-              
-                                <div>
-                                  <Label>Impostos (R$)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.impostos}
-                                    onChange={(e) => setFormData({ ...formData, impostos: e.target.value })}
                                   />
                                 </div>
 

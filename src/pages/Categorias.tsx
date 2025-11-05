@@ -33,68 +33,77 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
+interface Natureza {
+  id: string;
+  descricao: string | null;
+  tipo: "receita" | "despesa" | null;
+}
+
 interface Categoria {
   id: string;
   nome: string;
-  tipo: "receita" | "despesa";
-  cor?: string;
-  icone?: string;
   descricao?: string;
   empresa_id: string;
   usuario_id?: string;
   ativo: boolean;
   created_at: string;
   updated_at?: string;
+  natureza_id: string;
+  naturezas: {
+    tipo: "receita" | "despesa" | null;
+    descricao: string | null;
+  } | null;
 }
-
-const colorOptions = [
-  { value: "#2563eb", label: "Azul", class: "bg-blue-500" },
-  { value: "#16a34a", label: "Verde", class: "bg-green-500" },
-  { value: "#ef4444", label: "Vermelho", class: "bg-red-500" },
-  { value: "#f59e0b", label: "Laranja", class: "bg-orange-500" },
-  { value: "#c084fc", label: "Roxo", class: "bg-purple-500" },
-  { value: "#ec4899", label: "Rosa", class: "bg-pink-500" },
-];
 
 const Categorias = () => {
   const {user, loading: authLoading} = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
   const [categories, setCategories] = useState<Categoria[]>([]);
+  const [naturezas, setNaturezas] = useState<Natureza[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     nome: "",
-    tipo: "despesa" as "receita" | "despesa",
-    cor: colorOptions[0].value,
+    natureza_id: "",
     descricao: "",
   });
 
   useEffect(() => {
     if (!authLoading && user?.empresa_id) {
+      fetchNaturezas();
       fetchCategories();
     }
   }, [authLoading, user?.empresa_id]);
+
+  const fetchNaturezas = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("naturezas")
+        .select("id, descricao, tipo");
+
+      if (error) throw error;
+      setNaturezas(data || []);
+    } catch (error: any) {
+      toast.error("Erro ao carregar naturezas: " + error.message);
+    }
+  };
 
   const fetchCategories = async () => {
     setLoading(true);
     try {
       if (!user?.empresa_id) {
-        // This case should ideally not be reached due to the useEffect dependency, but as a safeguard
         throw new Error("Empresa não encontrada");
       }
 
       const { data, error } = await supabase
         .from("categorias")
-        .select("*")
+        .select("*, naturezas(tipo, descricao)")
         .filter("ativo", "eq", true)
         .filter("empresa_id", "eq", user.empresa_id)
         .order("nome");
 
       if (error) throw error;
-      setCategories((data || []).map(cat => ({
-        ...cat,
-        tipo: cat.tipo as "receita" | "despesa",
-      })));
+      setCategories(data || []);
     } catch (error: any) {
       toast.error("Erro ao carregar categorias: " + error.message);
     } finally {
@@ -105,8 +114,7 @@ const Categorias = () => {
   const resetForm = () => {
     setFormData({
       nome: "",
-      tipo: "despesa",
-      cor: colorOptions[0].value,
+      natureza_id: "",
       descricao: "",
     });
     setEditingCategory(null);
@@ -117,11 +125,14 @@ const Categorias = () => {
     
     try {
       if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+      if (!formData.natureza_id) {
+        toast.error("Por favor, selecione uma natureza.");
+        return;
+      }
 
       const categoryData = {
         nome: formData.nome,
-        tipo: formData.tipo,
-        cor: formData.cor,
+        natureza_id: formData.natureza_id,
         descricao: formData.descricao || null,
         usuario_id: user.id,
         empresa_id: user.empresa_id,
@@ -157,8 +168,7 @@ const Categorias = () => {
     setEditingCategory(category);
     setFormData({
         nome: category.nome,
-        tipo: category.tipo,
-        cor: category.cor || colorOptions[0].value,
+        natureza_id: category.natureza_id,
         descricao: category.descricao || "",
       });
     setIsOpen(true);
@@ -181,8 +191,8 @@ const Categorias = () => {
     }
   };
 
-  const incomeCategories = categories.filter(c => c.tipo === "receita");
-  const expenseCategories = categories.filter(c => c.tipo === "despesa");
+  const incomeCategories = categories.filter(c => c.naturezas?.tipo === "receita");
+  const expenseCategories = categories.filter(c => c.naturezas?.tipo === "despesa");
 
   return (
     <div className="space-y-6">
@@ -227,50 +237,22 @@ const Categorias = () => {
               </div>
               
               <div>
-                <Label htmlFor="tipo">Tipo *</Label>
+                <Label htmlFor="natureza">Natureza *</Label>
                 <Select
-                  value={formData.tipo}
-                  onValueChange={(value: "receita" | "despesa") =>
-                    setFormData({ ...formData, tipo: value })
-                  }
-                >
-                  <SelectTrigger id="type">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="receita">
-                      <div className="flex items-center gap-2">
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                        Receita
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="despesa">
-                      <div className="flex items-center gap-2">
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                        Despesa
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="cor">Cor</Label>
-                <Select
-                  value={formData.cor}
+                  value={formData.natureza_id}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, cor: value })
+                    setFormData({ ...formData, natureza_id: value })
                   }
                 >
-                  <SelectTrigger id="color">
-                    <SelectValue />
+                  <SelectTrigger id="natureza">
+                    <SelectValue placeholder="Selecione a natureza" />
                   </SelectTrigger>
                   <SelectContent>
-                    {colorOptions.map((color) => (
-                      <SelectItem key={color.value} value={color.value}>
+                    {naturezas.map((natureza) => (
+                      <SelectItem key={natureza.id} value={natureza.id}>
                         <div className="flex items-center gap-2">
-                          <div className={`w-4 h-4 rounded ${color.class}`} />
-                          {color.label}
+                          {natureza.tipo === 'receita' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
+                          {natureza.descricao}
                         </div>
                       </SelectItem>
                     ))}
@@ -339,10 +321,6 @@ const Categorias = () => {
                     className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.cor }}
-                      />
                       <div>
                         <p className="font-medium">{category.nome}</p>
                         {category.descricao && (
@@ -404,10 +382,6 @@ const Categorias = () => {
                     className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.cor }}
-                      />
                       <div>
                         <p className="font-medium">{category.nome}</p>
                         {category.descricao && (

@@ -11,7 +11,6 @@ export type NaturezaLancamento = "operacional" | "financeira" | "investimento"
 
 export interface Lancamento {
   id: string
-  usuario_id: string | null
   empresa_id: string
   categoria_id: string | null
   fornecedor_id: string | null
@@ -23,7 +22,6 @@ export interface Lancamento {
   custo: number
   impostos: number | null
   data_referencia: string
-  criado_por: string | null
   created_at: string
   updated_at: string | null
   categorias?: {
