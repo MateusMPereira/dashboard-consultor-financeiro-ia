@@ -13,7 +13,6 @@ export interface Lancamento {
   id: string
   empresa_id: string
   categoria_id: string | null
-  fornecedor_id: string | null
   tipo: TipoLancamento
   natureza: NaturezaLancamento | null
   descricao: string | null
@@ -25,9 +24,6 @@ export interface Lancamento {
   created_at: string
   updated_at: string | null
   categorias?: {
-    nome: string
-  } | null
-  fornecedores?: {
     nome: string
   } | null
 }
@@ -187,84 +183,11 @@ export type Database = {
           }
         ]
       }
-      fornecedores: {
-        Row: {
-          id: string
-          usuario_id: string | null
-          empresa_id: string
-          nome: string
-          cnpj: string | null
-          contato: string | null
-          email: string | null
-          telefone: string | null
-          endereco: string | null
-          cidade: string | null
-          uf: string | null
-          categoria: string | null
-          observacoes: string | null
-          ativo: boolean
-          created_at: string
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          usuario_id?: string | null
-          empresa_id: string
-          nome: string
-          cnpj?: string | null
-          contato?: string | null
-          email?: string | null
-          telefone?: string | null
-          endereco?: string | null
-          cidade?: string | null
-          uf?: string | null
-          categoria?: string | null
-          observacoes?: string | null
-          ativo?: boolean
-          created_at?: string
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          usuario_id?: string | null
-          empresa_id?: string
-          nome?: string
-          cnpj?: string | null
-          contato?: string | null
-          email?: string | null
-          telefone?: string | null
-          endereco?: string | null
-          cidade?: string | null
-          uf?: string | null
-          categoria?: string | null
-          observacoes?: string | null
-          ativo?: boolean
-          created_at?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "fornecedores_usuario_id_fkey"
-            columns: ["usuario_id"]
-            isOneToOne: false
-            referencedRelation: "usuarios"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "fornecedores_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       lancamentos: {
         Row: {
           id: string
           empresa_id: string
           categoria_id: string | null
-          fornecedor_id: string | null
           descricao: string | null
           valor: number
           data_referencia: string
@@ -274,8 +197,6 @@ export type Database = {
         Insert: {
           id?: string
           empresa_id: string
-          categoria_id?: string | null
-          fornecedor_id?: string | null
           descricao?: string | null
           valor: number
           data_referencia: string
@@ -286,7 +207,6 @@ export type Database = {
           id?: string
           empresa_id?: string
           categoria_id?: string | null
-          fornecedor_id?: string | null
           descricao?: string | null
           valor?: number
           data_referencia?: string
@@ -306,13 +226,6 @@ export type Database = {
             columns: ["categoria_id"]
             isOneToOne: false
             referencedRelation: "categorias"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "lancamentos_fornecedor_id_fkey"
-            columns: ["fornecedor_id"]
-            isOneToOne: false
-            referencedRelation: "fornecedores"
             referencedColumns: ["id"]
           }
         ]
@@ -418,62 +331,6 @@ export type Database = {
             columns: ["mensagem_id"]
             isOneToOne: false
             referencedRelation: "mensagens_whatsapp"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
-      kpis_financeiros: {
-        Row: {
-          id: string
-          empresa_id: string
-          periodo_inicio: string
-          periodo_fim: string
-          receita_liquida: number | null
-          cmv: number | null
-          custo_pessoal: number | null
-          custo_fixo: number | null
-          margem_contribuicao: number | null
-          ebitda: number | null
-          ebitda_percent: number | null
-          created_at: string
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          empresa_id: string
-          periodo_inicio: string
-          periodo_fim: string
-          receita_liquida?: number | null
-          cmv?: number | null
-          custo_pessoal?: number | null
-          custo_fixo?: number | null
-          margem_contribuicao?: number | null
-          ebitda?: number | null
-          ebitda_percent?: number | null
-          created_at?: string
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          empresa_id?: string
-          periodo_inicio?: string
-          periodo_fim?: string
-          receita_liquida?: number | null
-          cmv?: number | null
-          custo_pessoal?: number | null
-          custo_fixo?: number | null
-          margem_contribuicao?: number | null
-          ebitda?: number | null
-          ebitda_percent?: number | null
-          created_at?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "kpis_financeiros_empresa_id_fkey"
-            columns: ["empresa_id"]
-            isOneToOne: false
-            referencedRelation: "empresas"
             referencedColumns: ["id"]
           }
         ]

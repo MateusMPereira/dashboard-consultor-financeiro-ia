@@ -22,16 +22,10 @@ interface Category {
   } | null;
 }
 
-interface Supplier {
-  id: string;
-  nome: string;
-}
-
 const Lancamentos = () => {
   const {user, loading: authLoading} = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLancamento, setEditingLancamento] = useState<Lancamento | null>(null);
@@ -42,7 +36,6 @@ const Lancamentos = () => {
     valor: "",
     data_referencia: format(new Date(), "yyyy-MM-dd"),
     categoria_id: "",
-    fornecedor_id: "",
   });
 
   useEffect(() => {
@@ -58,19 +51,17 @@ const Lancamentos = () => {
         throw new Error("Empresa não encontrada");
       }
 
-      const [lancamentosRes, categoriesRes, suppliersRes] = await Promise.all([
+      const [lancamentosRes, categoriesRes] = await Promise.all([
         supabase
           .from("lancamentos")
-          .select("*, categorias(*, naturezas(*)), fornecedores(*)")
+          .select("*, categorias(*, naturezas(*))")
           .filter("empresa_id", "eq", user.empresa_id)
           .order("data_referencia", { ascending: false }),
-        supabase.from("categorias").select("*, naturezas(*)"),
-        supabase.from("fornecedores").select("*"),
+        supabase.from("categorias").select("*, naturezas(*)")
       ]);
 
       if (lancamentosRes.error) throw lancamentosRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
-      if (suppliersRes.error) throw suppliersRes.error;
 
       const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map((item: any) => ({
         ...item,
@@ -79,7 +70,6 @@ const Lancamentos = () => {
 
       setLancamentos(lancamentosData);
       setCategories(categoriesRes.data || []);
-      setSuppliers(suppliersRes.data || []);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
     } finally {
@@ -98,7 +88,6 @@ const Lancamentos = () => {
         valor: parseFloat(formData.valor),
         data_referencia: formData.data_referencia,
         categoria_id: formData.categoria_id || null,
-        fornecedor_id: formData.fornecedor_id || null,
         empresa_id: user.empresa_id,
       };
 
@@ -132,7 +121,6 @@ const Lancamentos = () => {
       valor: lancamento.valor.toString(),
       data_referencia: lancamento.data_referencia,
       categoria_id: lancamento.categoria_id || "",
-      fornecedor_id: lancamento.fornecedor_id || "",
     });
     setDialogOpen(true);
   };
@@ -158,7 +146,6 @@ const Lancamentos = () => {
       valor: "",
       data_referencia: format(new Date(), "yyyy-MM-dd"),
       categoria_id: "",
-      fornecedor_id: "",
     });
   };
 
@@ -273,31 +260,6 @@ const Lancamentos = () => {
                                     </SelectContent>
                                   </Select>
                                 </div>
-              
-                                <div>
-                                  <Label>Fornecedor (opcional)</Label>
-                                  <Select
-                                    value={formData.fornecedor_id}
-                                    onValueChange={(value) => setFormData({ ...formData, fornecedor_id: value })}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder={suppliers.length === 0 ? "Nenhum fornecedor cadastrado" : "Selecione..."} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {suppliers.length === 0 ? (
-                                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                          Nenhum fornecedor cadastrado.<br />Cadastre na página Fornecedores.
-                                        </div>
-                                      ) : (
-                                        suppliers.map((sup) => (
-                                          <SelectItem key={sup.id} value={sup.id}>
-                                            {sup.nome}
-                                          </SelectItem>
-                                        ))
-                                      )}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
                               </div>
                             </div>
 
@@ -379,7 +341,6 @@ const Lancamentos = () => {
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
                       {lancamento.categorias && ` • ${lancamento.categorias.nome}`}
-                      {lancamento.fornecedores && ` • ${lancamento.fornecedores.nome}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">

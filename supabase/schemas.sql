@@ -31,30 +31,10 @@ CREATE TABLE categorias (
     updated_at TIMESTAMP
 );
 
-CREATE TABLE fornecedores (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    usuario_id UUID REFERENCES usuarios(id),
-    empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
-    nome VARCHAR(150) NOT NULL,
-    cnpj VARCHAR(20),
-    contato VARCHAR(100),
-    email VARCHAR(150),
-    telefone VARCHAR(20),
-    endereco TEXT,
-    cidade VARCHAR(100),
-    uf VARCHAR(2),
-    categoria VARCHAR(100),
-    observacoes TEXT,
-    ativo BOOLEAN DEFAULT TRUE,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP
-);
-
 CREATE TABLE lancamentos (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     categoria_id UUID REFERENCES categorias(id),
-    fornecedor_id UUID REFERENCES fornecedores(id),
     descricao TEXT,
     valor NUMERIC(14,2) NOT NULL,
     data_referencia DATE NOT NULL,
@@ -83,22 +63,6 @@ CREATE TABLE arquivos (
     tipo VARCHAR(50),
     url TEXT NOT NULL,
     nome_original TEXT,
-    created_at TIMESTAMP DEFAULT NOW(),
-    updated_at TIMESTAMP
-);
-
-CREATE TABLE kpis_financeiros (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
-    periodo_inicio DATE NOT NULL,
-    periodo_fim DATE NOT NULL,
-    receita_liquida NUMERIC(14,2),
-    cmv NUMERIC(14,2),
-    custo_pessoal NUMERIC(14,2),
-    custo_fixo NUMERIC(14,2),
-    margem_contribuicao NUMERIC(5,2),
-    ebitda NUMERIC(14,2),
-    ebitda_percent NUMERIC(5,2),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );

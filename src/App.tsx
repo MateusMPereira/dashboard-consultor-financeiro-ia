@@ -8,9 +8,7 @@ import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Alertas from "./pages/Alertas";
-import KPIs from "./pages/KPIs";
 import Categorias from "./pages/Categorias";
-import Fornecedores from "./pages/Fornecedores";
 import Lancamentos from "./pages/Lancamentos";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
@@ -30,10 +28,8 @@ const App = () => {
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
               <Route path="/alertas" element={<ProtectedRoute><Layout><Alertas /></Layout></ProtectedRoute>} />
-              <Route path="/kpis" element={<ProtectedRoute><Layout><KPIs /></Layout></ProtectedRoute>} />
               <Route path="/lancamentos" element={<ProtectedRoute><Layout><Lancamentos /></Layout></ProtectedRoute>} />
               <Route path="/categorias" element={<ProtectedRoute><Layout><Categorias /></Layout></ProtectedRoute>} />
-              <Route path="/fornecedores" element={<ProtectedRoute><Layout><Fornecedores /></Layout></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AuthProvider>

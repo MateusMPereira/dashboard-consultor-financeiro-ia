@@ -4,7 +4,6 @@ import { TransactionsList } from "@/components/dashboard/TransactionsList";
 import { ExpensesChart } from "@/components/dashboard/ExpensesChart";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { AlertsList } from "@/components/dashboard/AlertsList";
-import { KPICard } from "@/components/dashboard/KPICard";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
@@ -100,7 +99,6 @@ const Index = () => {
               <AlertTriangle className="h-4 w-4 mr-2" />
               Alertas
             </TabsTrigger>
-            <TabsTrigger value="kpis">KPIs</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-8">
@@ -159,66 +157,6 @@ const Index = () => {
                 </p>
               </div>
               <AlertsList alerts={alerts} />
-            </div>
-          </TabsContent>
-
-          <TabsContent value="kpis">
-            <div className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold mb-2">KPIs Financeiros Detalhados</h2>
-                <p className="text-muted-foreground">
-                  Indicadores essenciais para tomada de decisão estratégica
-                </p>
-              </div>
-              
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                <KPICard
-                  label="Receita Líquida"
-                  value="R$ 100.000,00"
-                  percentage="+8.5%"
-                  trend="up"
-                  variant="success"
-                />
-                <KPICard
-                  label="CMV (%)"
-                  value="34,2%"
-                  percentage="+2.1%"
-                  trend="down"
-                  variant="warning"
-                />
-                <KPICard
-                  label="Custo de Pessoas"
-                  value="R$ 28.500,00"
-                  percentage="28.5%"
-                  variant="default"
-                />
-                <KPICard
-                  label="Custo Fixo"
-                  value="R$ 12.300,00"
-                  percentage="-1.2%"
-                  trend="up"
-                  variant="success"
-                />
-                <KPICard
-                  label="Margem de Contribuição"
-                  value="59,2%"
-                  percentage="+3.4%"
-                  trend="up"
-                  variant="success"
-                />
-                <KPICard
-                  label="EBITDA"
-                  value="R$ 18.750,00"
-                  percentage="18.8%"
-                  trend="up"
-                  variant="success"
-                />
-              </div>
-
-              <div className="grid gap-6 lg:grid-cols-2">
-                <ExpensesChart data={expensesData} />
-                <TrendChart data={trendData} />
-              </div>
             </div>
           </TabsContent>
         </Tabs>

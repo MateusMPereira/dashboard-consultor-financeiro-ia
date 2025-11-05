@@ -14,14 +14,12 @@ import {
 
 const financeMenuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "KPIs", url: "/kpis", icon: Target, disabled: true },
   { title: "Alertas", url: "/alertas", icon: AlertTriangle, disabled: true },
   { title: "Lançamentos", url: "/lancamentos", icon: Receipt },
 ];
 
 const registrationMenuItems = [
   { title: "Categorias", url: "/categorias", icon: Tag },
-  { title: "Fornecedores", url: "/fornecedores", icon: Building2 },
 ];
 
 export function AppSidebar() {

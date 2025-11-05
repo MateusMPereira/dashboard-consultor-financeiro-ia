@@ -5,7 +5,6 @@ export interface Lancamento {
   id: string
   empresa_id: string
   categoria_id: string | null
-  fornecedor_id: string | null
   descricao: string | null
   valor: number
   data_referencia: string
@@ -16,9 +15,6 @@ export interface Lancamento {
     naturezas: {
       tipo: "receita" | "despesa" | null
     } | null
-  } | null
-  fornecedores?: {
-    nome: string
   } | null
   tipo?: "receita" | "despesa" | null
 }
