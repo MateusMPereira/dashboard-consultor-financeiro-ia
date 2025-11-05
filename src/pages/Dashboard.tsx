@@ -62,7 +62,7 @@ const Dashboard = () => {
 
       const { data: currentMonthLancamentos, error: currentMonthError } = await supabase
         .from("lancamentos")
-        .select("*, categorias(nome)")
+        .select("*, categorias(*, naturezas(*))")
         .eq("empresa_id", user.empresa_id)
         .gte("data_referencia", currentMonthStart)
         .lte("data_referencia", currentMonthEnd)
@@ -72,14 +72,17 @@ const Dashboard = () => {
 
       const { data: previousMonthLancamentos, error: previousMonthError } = await supabase
         .from("lancamentos")
-        .select("*, categorias(nome)")
+        .select("*, categorias(*, naturezas(*))")
         .eq("empresa_id", user.empresa_id)
         .gte("data_referencia", previousMonthStart)
         .lte("data_referencia", previousMonthEnd);
 
       if (previousMonthError) throw previousMonthError;
 
-      const allLancamentos = [...(currentMonthLancamentos || []), ...(previousMonthLancamentos || [])];
+      const allLancamentos = [...(currentMonthLancamentos || []), ...(previousMonthLancamentos || [])].map((item: any) => ({
+        ...item,
+        tipo: item.categorias?.naturezas?.tipo || 'despesa',
+      }));
 
       let netIncomes = 0;
       let previousNetIncomes = 0
@@ -149,7 +152,12 @@ const Dashboard = () => {
         expenses: trendDataMap[month].expenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
-      setTransactions((currentMonthLancamentos || [])
+      setTransactions(allLancamentos
+        .filter((lancamento: any) => {
+            const today = new Date();
+            const currentMonthStart = format(startOfMonth(today), "yyyy-MM-dd");
+            return lancamento.data_referencia >= currentMonthStart;
+        })
         .map((lancamento: any) => ({
           id: lancamento.id,
           description: lancamento.descricao,

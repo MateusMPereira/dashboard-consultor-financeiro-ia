@@ -65,7 +65,7 @@ const Lancamentos = () => {
 
       const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map((item: any) => ({
         ...item,
-        tipo: item.categorias?.naturezas?.tipo,
+        tipo: item.categorias?.naturezas?.tipo || 'despesa',
       }));
 
       setLancamentos(lancamentosData);
