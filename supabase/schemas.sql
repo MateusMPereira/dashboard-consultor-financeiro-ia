@@ -4,7 +4,6 @@ CREATE TABLE empresas (
     cnpj VARCHAR(20) UNIQUE,
     telefone VARCHAR(20),
     email VARCHAR(150),
-    whatsapp_numero VARCHAR(20),
     ativo BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
@@ -15,6 +14,7 @@ CREATE TABLE usuarios (
     nome VARCHAR(150) NOT NULL,
     empresa_id UUID NOT NULL REFERENCES empresas(id) ON DELETE CASCADE,
     auth_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE ON UPDATE CASCADE,
+    whatsapp_numero VARCHAR(20),
     created_at TIMESTAMP DEFAULT NOW(),
     updated_at TIMESTAMP
 );
