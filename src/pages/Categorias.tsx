@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
@@ -16,14 +15,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   Select,
   SelectContent,
   SelectItem,
@@ -33,62 +24,64 @@ import {
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-interface Natureza {
-  id: string;
-  descricao: string | null;
-  tipo: "receita" | "despesa" | null;
-}
-
+// Represents the parent category (e.g., "Receitas Operacionais", "Custos Fixos")
 interface Categoria {
   id: string;
+  descricao: string;
+  natureza: "receita" | "despesa";
+}
+
+// Represents the subcategory, which is what the user manages in this UI
+interface Subcategoria {
+  id: string;
   nome: string;
-  descricao?: string;
+  descricao?: string | null;
   empresa_id: string;
-  usuario_id?: string;
+  usuario_id?: string | null;
   ativo: boolean;
   created_at: string;
-  updated_at?: string;
-  natureza_id: string;
-  naturezas: {
-    tipo: "receita" | "despesa" | null;
+  updated_at?: string | null;
+  categoria_id: string;
+  categorias: {
+    natureza: "receita" | "despesa" | null;
     descricao: string | null;
   } | null;
 }
 
-const Categorias = () => {
-  const {user, loading: authLoading} = useAuth();
+const CategoriasPage = () => {
+  const { user, loading: authLoading } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
+  const [editingSubcategory, setEditingSubcategory] = useState<Subcategoria | null>(null);
+  const [subcategories, setSubcategories] = useState<Subcategoria[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
-  const [naturezas, setNaturezas] = useState<Natureza[]>([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
     nome: "",
-    natureza_id: "",
+    categoria_id: "",
     descricao: "",
   });
 
   useEffect(() => {
     if (!authLoading && user?.empresa_id) {
-      fetchNaturezas();
       fetchCategories();
+      fetchSubcategories();
     }
   }, [authLoading, user?.empresa_id]);
 
-  const fetchNaturezas = async () => {
+  const fetchCategories = async () => {
     try {
       const { data, error } = await supabase
-        .from("naturezas")
-        .select("id, descricao, tipo");
+        .from("categorias")
+        .select("id, descricao, natureza");
 
       if (error) throw error;
-      setNaturezas(data || []);
+      setCategories(data || []);
     } catch (error: any) {
-      toast.error("Erro ao carregar naturezas: " + error.message);
+      toast.error("Erro ao carregar categorias: " + error.message);
     }
   };
 
-  const fetchCategories = async () => {
+  const fetchSubcategories = async () => {
     setLoading(true);
     try {
       if (!user?.empresa_id) {
@@ -96,16 +89,16 @@ const Categorias = () => {
       }
 
       const { data, error } = await supabase
-        .from("categorias")
-        .select("*, naturezas(tipo, descricao)")
-        .filter("ativo", "eq", true)
-        .filter("empresa_id", "eq", user.empresa_id)
+        .from("subcategorias")
+        .select("*, categorias(natureza, descricao)")
+        .eq("ativo", true)
+        .eq("empresa_id", user.empresa_id)
         .order("nome");
 
       if (error) throw error;
-      setCategories(data || []);
+      setSubcategories(data || []);
     } catch (error: any) {
-      toast.error("Erro ao carregar categorias: " + error.message);
+      toast.error("Erro ao carregar subcategorias: " + error.message);
     } finally {
       setLoading(false);
     }
@@ -114,10 +107,10 @@ const Categorias = () => {
   const resetForm = () => {
     setFormData({
       nome: "",
-      natureza_id: "",
+      categoria_id: "",
       descricao: "",
     });
-    setEditingCategory(null);
+    setEditingSubcategory(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -125,32 +118,32 @@ const Categorias = () => {
     
     try {
       if (!user?.empresa_id) throw new Error("Empresa não encontrada");
-      if (!formData.natureza_id) {
-        toast.error("Por favor, selecione uma natureza.");
+      if (!formData.categoria_id) {
+        toast.error("Por favor, selecione uma categoria pai.");
         return;
       }
 
-      const categoryData = {
+      const subcategoryData = {
         nome: formData.nome,
-        natureza_id: formData.natureza_id,
+        categoria_id: formData.categoria_id,
         descricao: formData.descricao || null,
         usuario_id: user.id,
         empresa_id: user.empresa_id,
         ativo: true,
       };
 
-      if (editingCategory) {
+      if (editingSubcategory) {
         const { error } = await supabase
-          .from("categorias")
-          .update(categoryData)
-          .eq("id", editingCategory.id);
+          .from("subcategorias")
+          .update(subcategoryData)
+          .eq("id", editingSubcategory.id);
 
         if (error) throw error;
         toast.success("Categoria atualizada com sucesso!");
       } else {
         const { error } = await supabase
-          .from("categorias")
-          .insert(categoryData);
+          .from("subcategorias")
+          .insert(subcategoryData);
 
         if (error) throw error;
         toast.success("Categoria cadastrada com sucesso!");
@@ -158,18 +151,18 @@ const Categorias = () => {
 
       setIsOpen(false);
       resetForm();
-      fetchCategories();
+      fetchSubcategories();
     } catch (error: any) {
       toast.error("Erro ao salvar categoria: " + error.message);
     }
   };
 
-  const handleEdit = (category: Categoria) => {
-    setEditingCategory(category);
+  const handleEdit = (subcategory: Subcategoria) => {
+    setEditingSubcategory(subcategory);
     setFormData({
-        nome: category.nome,
-        natureza_id: category.natureza_id,
-        descricao: category.descricao || "",
+        nome: subcategory.nome,
+        categoria_id: subcategory.categoria_id,
+        descricao: subcategory.descricao || "",
       });
     setIsOpen(true);
   };
@@ -178,21 +171,22 @@ const Categorias = () => {
     if (!confirm("Tem certeza que deseja excluir esta categoria?")) return;
 
     try {
+      // We "soft delete" by setting ativo to false
       const { error } = await supabase
-        .from("categorias")
-        .delete()
+        .from("subcategorias")
+        .update({ ativo: false })
         .eq("id", id);
 
       if (error) throw error;
       toast.success("Categoria removida com sucesso!");
-      fetchCategories();
+      fetchSubcategories();
     } catch (error: any) {
       toast.error("Erro ao excluir categoria: " + error.message);
     }
   };
 
-  const incomeCategories = categories.filter(c => c.naturezas?.tipo === "receita");
-  const expenseCategories = categories.filter(c => c.naturezas?.tipo === "despesa");
+  const incomeSubcategories = subcategories.filter(c => c.categorias?.natureza === "receita");
+  const expenseSubcategories = subcategories.filter(c => c.categorias?.natureza === "despesa");
 
   return (
     <div className="space-y-6">
@@ -200,7 +194,7 @@ const Categorias = () => {
         <div>
           <h1 className="text-3xl font-bold">Categorias</h1>
           <p className="text-muted-foreground mt-1">
-            Organize seus lançamentos financeiros por categorias
+            Organize seus lançamentos financeiros por categorias.
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => {
@@ -216,10 +210,10 @@ const Categorias = () => {
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingCategory ? "Editar Categoria" : "Nova Categoria"}
+                {editingSubcategory ? "Editar Categoria" : "Nova Categoria"}
               </DialogTitle>
               <DialogDescription>
-                {editingCategory
+                {editingSubcategory
                   ? "Atualize as informações da categoria"
                   : "Preencha os dados da nova categoria"}
               </DialogDescription>
@@ -232,27 +226,27 @@ const Categorias = () => {
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   required
-                  placeholder="Ex: Alimentação, Salário"
+                  placeholder="Ex: Fornecedor de Carnes, Aluguel"
                 />
               </div>
               
               <div>
-                <Label htmlFor="natureza">Natureza *</Label>
+                <Label htmlFor="categoria_pai">Grupo da Categoria *</Label>
                 <Select
-                  value={formData.natureza_id}
+                  value={formData.categoria_id}
                   onValueChange={(value) =>
-                    setFormData({ ...formData, natureza_id: value })
+                    setFormData({ ...formData, categoria_id: value })
                   }
                 >
-                  <SelectTrigger id="natureza">
-                    <SelectValue placeholder="Selecione a natureza" />
+                  <SelectTrigger id="categoria_pai">
+                    <SelectValue placeholder="Selecione o grupo" />
                   </SelectTrigger>
                   <SelectContent>
-                    {naturezas.map((natureza) => (
-                      <SelectItem key={natureza.id} value={natureza.id}>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
                         <div className="flex items-center gap-2">
-                          {natureza.tipo === 'receita' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
-                          {natureza.descricao}
+                          {cat.natureza === 'receita' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
+                          {cat.descricao}
                         </div>
                       </SelectItem>
                     ))}
@@ -283,7 +277,7 @@ const Categorias = () => {
                   Cancelar
                 </Button>
                 <Button type="submit">
-                  {editingCategory ? "Atualizar" : "Cadastrar"}
+                  {editingSubcategory ? "Atualizar" : "Cadastrar"}
                 </Button>
               </div>
             </form>
@@ -300,13 +294,13 @@ const Categorias = () => {
               Receitas
             </CardTitle>
             <CardDescription>
-              {incomeCategories.length === 0
+              {incomeSubcategories.length === 0
                 ? "Nenhuma categoria de receita cadastrada"
-                : `${incomeCategories.length} categoria(s) de receita`}
+                : `${incomeSubcategories.length} categoria(s) de receita`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {incomeCategories.length === 0 ? (
+            {incomeSubcategories.length === 0 ? (
               <div className="text-center py-8">
                 <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
@@ -315,17 +309,17 @@ const Categorias = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {incomeCategories.map((category) => (
+                {incomeSubcategories.map((subcat) => (
                   <div
-                    key={category.id}
+                    key={subcat.id}
                     className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="font-medium">{category.nome}</p>
-                        {category.descricao && (
+                        <p className="font-medium">{subcat.nome}</p>
+                        {subcat.descricao && (
                           <p className="text-xs text-muted-foreground">
-                            {category.descricao}
+                            {subcat.descricao}
                           </p>
                         )}
                       </div>
@@ -334,14 +328,14 @@ const Categorias = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(category)}
+                        onClick={() => handleEdit(subcat)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(category.id)}
+                        onClick={() => handleDelete(subcat.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -361,13 +355,13 @@ const Categorias = () => {
               Despesas
             </CardTitle>
             <CardDescription>
-              {expenseCategories.length === 0
+              {expenseSubcategories.length === 0
                 ? "Nenhuma categoria de despesa cadastrada"
-                : `${expenseCategories.length} categoria(s) de despesa`}
+                : `${expenseSubcategories.length} categoria(s) de despesa`}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {expenseCategories.length === 0 ? (
+            {expenseSubcategories.length === 0 ? (
               <div className="text-center py-8">
                 <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
@@ -376,17 +370,17 @@ const Categorias = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {expenseCategories.map((category) => (
+                {expenseSubcategories.map((subcat) => (
                   <div
-                    key={category.id}
+                    key={subcat.id}
                     className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                   >
                     <div className="flex items-center gap-3">
                       <div>
-                        <p className="font-medium">{category.nome}</p>
-                        {category.descricao && (
+                        <p className="font-medium">{subcat.nome}</p>
+                        {subcat.descricao && (
                           <p className="text-xs text-muted-foreground">
-                            {category.descricao}
+                            {subcat.descricao}
                           </p>
                         )}
                       </div>
@@ -395,14 +389,14 @@ const Categorias = () => {
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleEdit(category)}
+                        onClick={() => handleEdit(subcat)}
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => handleDelete(category.id)}
+                        onClick={() => handleDelete(subcat.id)}
                       >
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -418,4 +412,4 @@ const Categorias = () => {
   );
 };
 
-export default Categorias;
+export default CategoriasPage;

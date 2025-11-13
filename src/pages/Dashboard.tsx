@@ -86,7 +86,7 @@ const Dashboard = () => {
 
       const { data: currentMonthLancamentos, error: currentMonthError } = await supabase
         .from("lancamentos")
-        .select("*, categorias(*, naturezas(*))")
+        .select("*, subcategorias(*, categorias(*))")
         .eq("empresa_id", user.empresa_id)
         .gte("data_referencia", currentMonthStart)
         .lte("data_referencia", currentMonthEnd)
@@ -96,7 +96,7 @@ const Dashboard = () => {
 
       const { data: previousMonthLancamentos, error: previousMonthError } = await supabase
         .from("lancamentos")
-        .select("*, categorias(*, naturezas(*))")
+        .select("*, subcategorias(*, categorias(*))")
         .eq("empresa_id", user.empresa_id)
         .gte("data_referencia", previousMonthStart)
         .lte("data_referencia", previousMonthEnd);
@@ -105,7 +105,7 @@ const Dashboard = () => {
 
       const allLancamentos = [...(currentMonthLancamentos || []), ...(previousMonthLancamentos || [])].map((item: any) => ({
         ...item,
-        tipo: item.categorias?.naturezas?.tipo || 'despesa',
+        tipo: item.subcategorias?.categorias?.natureza || 'despesa',
       }));
 
       let netIncomes = 0;
@@ -135,7 +135,7 @@ const Dashboard = () => {
         } else {
 
           if (isCurrentMonth) {
-            const categoryName = lancamento.categorias?.nome || "Natureza não definida";
+            const categoryName = lancamento.subcategorias?.nome || "Natureza não definida";
             expensesByNature[categoryName] = (expensesByNature[categoryName] || 0) + amount;
           }
         }
@@ -216,7 +216,7 @@ const Dashboard = () => {
         .map((lancamento: any) => ({
           id: lancamento.id,
           description: lancamento.descricao,
-          category: lancamento.categorias?.nome || "N/A",
+          category: lancamento.subcategorias?.nome || "N/A",
           amount: parseFloat(lancamento.valor),
           date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
           type: (lancamento.tipo === "receita" ? "income" : "expense") as "income" | "expense",

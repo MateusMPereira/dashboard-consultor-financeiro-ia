@@ -12,7 +12,7 @@ export type NaturezaLancamento = "operacional" | "financeira" | "investimento"
 export interface Lancamento {
   id: string
   empresa_id: string
-  categoria_id: string | null
+  sub_categoria_id: string | null
   tipo: TipoLancamento
   natureza: NaturezaLancamento | null
   descricao: string | null
@@ -23,8 +23,12 @@ export interface Lancamento {
   data_referencia: string
   created_at: string
   updated_at: string | null
-  categorias?: {
-    nome: string
+  subcategorias?: {
+    nome: string,
+    categorias?: {
+      descricao: string,
+      natureza: string
+    } | null
   } | null
 }
 
@@ -54,7 +58,6 @@ export type Database = {
           cnpj: string | null
           telefone: string | null
           email: string | null
-          whatsapp_numero: string | null
           ativo: boolean
           created_at: string
           updated_at: string | null
@@ -65,7 +68,6 @@ export type Database = {
           cnpj?: string | null
           telefone?: string | null
           email?: string | null
-          whatsapp_numero?: string | null
           ativo?: boolean
           created_at?: string
           updated_at?: string | null
@@ -76,7 +78,6 @@ export type Database = {
           cnpj?: string | null
           telefone?: string | null
           email?: string | null
-          whatsapp_numero?: string | null
           ativo?: boolean
           created_at?: string
           updated_at?: string | null
@@ -89,6 +90,7 @@ export type Database = {
           nome: string
           empresa_id: string
           auth_id: string
+          whatsapp_numero: string | null
           created_at: string
           updated_at: string | null
         }
@@ -97,6 +99,7 @@ export type Database = {
           nome: string
           empresa_id: string
           auth_id: string
+          whatsapp_numero?: string | null
           created_at?: string
           updated_at?: string | null
         }
@@ -105,6 +108,7 @@ export type Database = {
           nome: string
           empresa_id?: string
           auth_id?: string
+          whatsapp_numero?: string | null
           created_at?: string
           updated_at?: string | null
         }
@@ -117,7 +121,7 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "usuarios_users_id_fkey"
+            foreignKeyName: "usuarios_auth_id_fkey"
             columns: ["auth_id"]
             isOneToOne: false
             referencedRelation: "auth.users"
@@ -128,12 +132,36 @@ export type Database = {
       categorias: {
         Row: {
           id: string
+          descricao: string
+          natureza: "receita" | "despesa"
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          descricao: string
+          natureza: "receita" | "despesa"
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          descricao?: string
+          natureza?: "receita" | "despesa"
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      subcategorias: {
+        Row: {
+          id: string
           usuario_id: string | null
           empresa_id: string
           nome: string
           descricao: string | null
           ativo: boolean
-          natureza_id: string
+          categoria_id: string
           created_at: string
           updated_at: string | null
         }
@@ -144,7 +172,7 @@ export type Database = {
           nome: string
           descricao?: string | null
           ativo?: boolean
-          natureza_id: string
+          categoria_id: string
           created_at?: string
           updated_at?: string | null
         }
@@ -155,7 +183,7 @@ export type Database = {
           nome?: string
           descricao?: string | null
           ativo?: boolean
-          natureza_id?: string
+          categoria_id?: string
           created_at?: string
           updated_at?: string | null
         }
@@ -175,10 +203,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "categorias_natureza_id_fkey"
-            columns: ["natureza_id"]
+            foreignKeyName: "subcategorias_categoria_id_fkey"
+            columns: ["categoria_id"]
             isOneToOne: false
-            referencedRelation: "naturezas"
+            referencedRelation: "categorias"
             referencedColumns: ["id"]
           }
         ]
@@ -187,7 +215,7 @@ export type Database = {
         Row: {
           id: string
           empresa_id: string
-          categoria_id: string | null
+          sub_categoria_id: string | null
           descricao: string | null
           valor: number
           data_referencia: string
@@ -197,6 +225,7 @@ export type Database = {
         Insert: {
           id?: string
           empresa_id: string
+          sub_categoria_id?: string | null
           descricao?: string | null
           valor: number
           data_referencia: string
@@ -206,7 +235,7 @@ export type Database = {
         Update: {
           id?: string
           empresa_id?: string
-          categoria_id?: string | null
+          sub_categoria_id?: string | null
           descricao?: string | null
           valor?: number
           data_referencia?: string
@@ -222,10 +251,10 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "lancamentos_categoria_id_fkey"
-            columns: ["categoria_id"]
+            foreignKeyName: "lancamentos_sub_categoria_id_fkey"
+            columns: ["sub_categoria_id"]
             isOneToOne: false
-            referencedRelation: "categorias"
+            referencedRelation: "subcategorias"
             referencedColumns: ["id"]
           }
         ]
@@ -512,30 +541,6 @@ export type Database = {
             referencedColumns: ["id"]
           }
         ]
-      },
-      naturezas: {
-        Row: {
-          id: string
-          descricao: string | null
-          tipo: "receita" | "despesa" | null
-          created_at: string
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          descricao?: string | null
-          tipo?: "receita" | "despesa" | null
-          created_at?: string
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          descricao?: string | null
-          tipo?: "receita" | "despesa" | null
-          created_at?: string
-          updated_at?: string | null
-        }
-        Relationships: []
       }
     }
     Views: {

@@ -14,18 +14,18 @@ import { useAuth } from "@/contexts/AuthContext";
 
 import { Lancamento, TipoLancamento } from "@/types/lancamento";
 
-interface Category {
+interface Subcategory {
   id: string;
   nome: string;
-  naturezas: {
-    tipo: "receita" | "despesa" | null;
+  categorias: {
+    natureza: "receita" | "despesa" | null;
   } | null;
 }
 
 const Lancamentos = () => {
-  const {user, loading: authLoading} = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLancamento, setEditingLancamento] = useState<Lancamento | null>(null);
@@ -35,7 +35,7 @@ const Lancamentos = () => {
     descricao: "",
     valor: "",
     data_referencia: format(new Date(), "yyyy-MM-dd"),
-    categoria_id: "",
+    sub_categoria_id: "",
   });
 
   useEffect(() => {
@@ -51,25 +51,27 @@ const Lancamentos = () => {
         throw new Error("Empresa não encontrada");
       }
 
-      const [lancamentosRes, categoriesRes] = await Promise.all([
+      const [lancamentosRes, subcategoriesRes] = await Promise.all([
         supabase
           .from("lancamentos")
-          .select("*, categorias(*, naturezas(*))")
-          .filter("empresa_id", "eq", user.empresa_id)
+          .select("*, subcategorias(*, categorias(*))")
+          .eq("empresa_id", user.empresa_id)
           .order("data_referencia", { ascending: false }),
-        supabase.from("categorias").select("*, naturezas(*)")
+        supabase.from("subcategorias").select("*, categorias(natureza)")
+          .eq("empresa_id", user.empresa_id)
+          .eq("ativo", true)
       ]);
 
       if (lancamentosRes.error) throw lancamentosRes.error;
-      if (categoriesRes.error) throw categoriesRes.error;
+      if (subcategoriesRes.error) throw subcategoriesRes.error;
 
       const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map((item: any) => ({
         ...item,
-        tipo: item.categorias?.naturezas?.tipo || 'despesa',
+        tipo: item.subcategorias?.categorias?.natureza || 'despesa',
       }));
 
       setLancamentos(lancamentosData);
-      setCategories(categoriesRes.data || []);
+      setSubcategories(subcategoriesRes.data || []);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
     } finally {
@@ -87,7 +89,7 @@ const Lancamentos = () => {
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
         data_referencia: formData.data_referencia,
-        categoria_id: formData.categoria_id || null,
+        sub_categoria_id: formData.sub_categoria_id || null,
         empresa_id: user.empresa_id,
       };
 
@@ -116,11 +118,13 @@ const Lancamentos = () => {
 
   const handleEdit = (lancamento: Lancamento) => {
     setEditingLancamento(lancamento);
+    const lancamentoTipo = lancamento.subcategorias?.categorias?.natureza || 'despesa';
+    setTipoFiltro(lancamentoTipo);
     setFormData({
       descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
       data_referencia: lancamento.data_referencia,
-      categoria_id: lancamento.categoria_id || "",
+      sub_categoria_id: lancamento.sub_categoria_id || "",
     });
     setDialogOpen(true);
   };
@@ -145,7 +149,7 @@ const Lancamentos = () => {
       descricao: "",
       valor: "",
       data_referencia: format(new Date(), "yyyy-MM-dd"),
-      categoria_id: "",
+      sub_categoria_id: "",
     });
   };
 
@@ -157,7 +161,7 @@ const Lancamentos = () => {
     .filter((l) => l.tipo === "despesa")
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
-  const filteredCategories = categories.filter(cat => cat.naturezas?.tipo === tipoFiltro);
+  const filteredSubcategories = subcategories.filter(sub => sub.categorias?.natureza === tipoFiltro);
 
   return (
     <div className="space-y-6">
@@ -171,7 +175,10 @@ const Lancamentos = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button onClick={resetForm}>
+            <Button onClick={() => {
+              resetForm();
+              setTipoFiltro('despesa');
+            }}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Lançamento
             </Button>
@@ -183,85 +190,85 @@ const Lancamentos = () => {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
-                            <div className="max-h-[80vh] overflow-y-auto pr-4">
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <div>
-                                  <Label>Tipo</Label>
-                                  <Select
-                                    value={tipoFiltro}
-                                    onValueChange={(value: "receita" | "despesa") => {
-                                      setTipoFiltro(value);
-                                      setFormData(prev => ({
-                                        ...prev,
-                                        categoria_id: "",
-                                      }));
-                                    }}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="receita">Receita</SelectItem>
-                                      <SelectItem value="despesa">Despesa</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-              
-                                <div className="md:col-span-2">
-                                  <Label>Descrição</Label>
-                                  <Textarea
-                                    value={formData.descricao}
-                                    onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                                  />
-                                </div>
-              
-                                <div>
-                                  <Label>Valor (R$)</Label>
-                                  <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={formData.valor}
-                                    onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
-                                    required
-                                  />
-                                </div>
+              <div className="max-h-[80vh] overflow-y-auto pr-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Tipo</Label>
+                    <Select
+                      value={tipoFiltro}
+                      onValueChange={(value: "receita" | "despesa") => {
+                        setTipoFiltro(value);
+                        setFormData(prev => ({
+                          ...prev,
+                          sub_categoria_id: "",
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="receita">Receita</SelectItem>
+                        <SelectItem value="despesa">Despesa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                                <div>
-                                  <Label>Data de Referência</Label>
-                                  <Input
-                                    type="date"
-                                    value={formData.data_referencia}
-                                    onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
-                                    required
-                                  />
-                                </div>
-              
-                                <div>
-                                  <Label>Categoria (opcional)</Label>
-                                  <Select
-                                    value={formData.categoria_id}
-                                    onValueChange={(value) => setFormData({ ...formData, categoria_id: value })}
-                                  >
-                                    <SelectTrigger>
-                                      <SelectValue placeholder={categories.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione..."} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {filteredCategories.length === 0 ? (
-                                        <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                                          Nenhuma categoria cadastrada para este tipo.<br />Cadastre na página Categorias.
-                                        </div>
-                                      ) : (
-                                        filteredCategories.map((cat) => (
-                                          <SelectItem key={cat.id} value={cat.id}>
-                                            {cat.nome}
-                                          </SelectItem>
-                                        ))
-                                      )}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            </div>
+                  <div className="md:col-span-2">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      value={formData.descricao}
+                      onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.valor}
+                      onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Data de Referência</Label>
+                    <Input
+                      type="date"
+                      value={formData.data_referencia}
+                      onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Categoria (opcional)</Label>
+                    <Select
+                      value={formData.sub_categoria_id}
+                      onValueChange={(value) => setFormData({ ...formData, sub_categoria_id: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={filteredSubcategories.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredSubcategories.length === 0 ? (
+                          <div className="px-2 py-6 text-center text-sm text-muted-foreground">
+                            Nenhuma categoria para este tipo.<br />Cadastre na página Categorias.
+                          </div>
+                        ) : (
+                          filteredSubcategories.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.id}>
+                              {sub.nome}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
 
               <div className="flex gap-2 justify-end pt-4">
                 <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
@@ -340,7 +347,7 @@ const Lancamentos = () => {
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
-                      {lancamento.categorias && ` • ${lancamento.categorias.nome}`}
+                      {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
