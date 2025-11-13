@@ -34,13 +34,13 @@ interface TrendData {
   month: string;
   income: number;
   cmv: number;
-  despesasOperacionais: number;
+  expenses: number;
 }
 
 interface TrendServicesData {
   month: string;
   income: number;
-  expenses: number;
+  trendOperatingExpenses: number;
 }
 
 const Dashboard = () => {
@@ -125,7 +125,7 @@ const Dashboard = () => {
       const fixedExpensesBySubcategory: { [key: string]: number } = {};
       const variableExpensesBySubcategory: { [key: string]: number } = {};
       const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
-      const trendServicesDataMap: { [key: string]: { income: number; expenses: number } } = {};
+      const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
 
       allLancamentos.forEach((lancamento: any) => {
         const amount = parseFloat(lancamento.valor);
@@ -141,7 +141,7 @@ const Dashboard = () => {
           trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
         }
         if (!trendServicesDataMap[monthKey]) {
-          trendServicesDataMap[monthKey] = { income: 0, despesasOperacionais: 0 };
+          trendServicesDataMap[monthKey] = { income: 0, trendOperatingExpenses: 0 };
         }
 
         if (lancamento.tipo === "receita") {
@@ -175,7 +175,7 @@ const Dashboard = () => {
               previousOperatingExpenses += amount;
             }
             trendDataMap[monthKey].expenses += amount;
-            trendServicesDataMap[monthKey].despesasOperacionais += amount;
+            trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
           }
         }
       });      
@@ -216,13 +216,13 @@ const Dashboard = () => {
         month,
         income: trendDataMap[month].income,
         cmv: trendDataMap[month].cmv,
-        despesasOperacionais: trendDataMap[month].expenses,
+        expenses: trendDataMap[month].expenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
       setTrendChartServicesData(Object.keys(trendServicesDataMap).map(month => ({
         month,
         income: trendServicesDataMap[month].income,
-        despesasOperacionais: trendServicesDataMap[month].despesasOperacionais,
+        trendOperatingExpenses: trendServicesDataMap[month].trendOperatingExpenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
       setTransactions(allLancamentos

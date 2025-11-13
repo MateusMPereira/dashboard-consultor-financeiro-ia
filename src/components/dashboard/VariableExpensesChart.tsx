@@ -15,7 +15,6 @@ export function VariableExpensesChart({ data }: VariableExpensesChartProps) {
   return (
     <Card className="p-6 shadow-card">
       <h3 className="text-xl font-bold">Despesas Variáveis Discretizadas</h3>
-      <h6 className="text-md mb-4">Mês atual</h6>
       <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie

@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface TrendData {
   month: string;
   income: number;
-  despesasOperacionais: number;
+  trendOperatingExpenses: number;
 }
 
 interface TrendChartServicesProps {
@@ -36,7 +36,7 @@ export function TrendChartServices({ data }: TrendChartServicesProps) {
           />
           <Line
             type="monotone"
-            dataKey="despesasOperacionais"
+            dataKey="trendOperatingExpenses"
             stroke="hsl(var(--destructive))"
             strokeWidth={2}
             name="Despesas Operacionais"
