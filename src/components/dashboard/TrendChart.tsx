@@ -37,18 +37,18 @@ export function TrendChart({ data }: TrendChartProps) {
           <Line
             type="monotone"
             dataKey="cmv"
-            stroke="hsl(var(--destructive))"
+            stroke="hsl(var(--warning))"
             strokeWidth={2}
             name="CMV"
-            dot={{ fill: "hsl(var(--destructive))" }}
+            dot={{ fill: "hsl(var(--warning))" }}
           />
           <Line
             type="monotone"
             dataKey="despesasOperacionais"
-            stroke="hsl(var(--warning))"
+            stroke="hsl(var(--destructive))"
             strokeWidth={2}
             name="Despesas Operacionais"
-            dot={{ fill: "hsl(var(--warning))" }}
+            dot={{ fill: "hsl(var(--destructive))" }}
           />
         </LineChart>
       </ResponsiveContainer>
