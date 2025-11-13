@@ -33,7 +33,8 @@ interface VariableExpenseData {
 interface TrendData {
   month: string;
   income: number;
-  expenses: number;
+  cmv: number;
+  despesasOperacionais: number;
 }
 
 interface TrendServicesData {
@@ -121,6 +122,8 @@ const Dashboard = () => {
       let previousEbitda = 0;
 
       const cmvBySubcategory: { [key: string]: number } = {};
+      const fixedExpensesBySubcategory: { [key: string]: number } = {};
+      const variableExpensesBySubcategory: { [key: string]: number } = {};
       const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
       const trendServicesDataMap: { [key: string]: { income: number; expenses: number } } = {};
 
@@ -130,6 +133,8 @@ const Dashboard = () => {
         const isPreviousMonth = lancamento.data_referencia >= previousMonthStart && lancamento.data_referencia <= previousMonthEnd;
 
         const isCMV = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CMV') && lancamento.tipo === 'despesa';
+        const isFixedCost = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CUSTO FIXO') && lancamento.tipo === 'despesa';
+        const isVariableCost = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CUSTO VARIAVEL') && lancamento.tipo === 'despesa';
 
         if (lancamento.tipo === "receita") {
           if (isCurrentMonth) netIncomes += amount;
@@ -143,30 +148,38 @@ const Dashboard = () => {
           if (isPreviousMonth) {
             previousTotalCMV += amount;
           }
-        } else {
-          // Logic for other expenses (Operating, Fixed, Variable) will be handled later
+        } else if (isFixedCost || isVariableCost) {
+            if (isCurrentMonth) {
+                operatingExpenses += amount;
+                const subcategoryName = lancamento.subcategorias?.nome || "Despesa Não Categorizada";
+                if(isFixedCost) {
+                    fixedExpensesBySubcategory[subcategoryName] = (fixedExpensesBySubcategory[subcategoryName] || 0) + amount;
+                } else {
+                    variableExpensesBySubcategory[subcategoryName] = (variableExpensesBySubcategory[subcategoryName] || 0) + amount;
+                }
+            }
+            if (isPreviousMonth) {
+                previousOperatingExpenses += amount;
+            }
         }
 
         const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
         if (!trendDataMap[monthKey]) {
           trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
         }
-        if (lancamento.tipo === "receita") {
-          trendDataMap[monthKey].income += amount;
-        } else if (isCMV) {
-          trendDataMap[monthKey].cmv += amount;
-        } else {
-          trendDataMap[monthKey].expenses += amount;
+        if (!trendServicesDataMap[monthKey]) {
+          trendServicesDataMap[monthKey] = { income: 0, despesasOperacionais: 0 };
         }
 
-        const monthKeyServices = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
-        if (!trendServicesDataMap[monthKeyServices]) {
-          trendServicesDataMap[monthKeyServices] = { income: 0, expenses: 0 };
-        }
         if (lancamento.tipo === "receita") {
-          trendServicesDataMap[monthKeyServices].income += amount;
+          trendDataMap[monthKey].income += amount;
+          trendServicesDataMap[monthKey].income += amount;
+        } else if (isCMV) {
+          trendDataMap[monthKey].cmv += amount;
+          trendServicesDataMap[monthKey].despesasOperacionais += amount;
         } else {
-          trendServicesDataMap[monthKeyServices].expenses += amount;
+          trendDataMap[monthKey].expenses += amount;
+          trendServicesDataMap[monthKey].despesasOperacionais += amount;
         }
       });      
 
@@ -177,11 +190,11 @@ const Dashboard = () => {
         cmvIncomesSlice: (netIncomes > 0) ? totalCMV * (netIncomes / 100) : 0,
         previousTotalCMV,
         operatingExpenses,
-        previousOperatingExpenses: 0,
-        contributionMargin,
-        previousContributionMargin,
-        ebitda,
-        previousEbitda
+        previousOperatingExpenses,
+        contributionMargin: totalCMV + operatingExpenses,
+        previousContributionMargin: previousTotalCMV + previousOperatingExpenses,
+        ebitda: netIncomes - (totalCMV + operatingExpenses),
+        previousEbitda: previousNetIncomes - (previousTotalCMV + previousOperatingExpenses)
       });
 
       setDiscretizedCMVChartData(Object.keys(cmvBySubcategory).map(name => ({
@@ -190,28 +203,29 @@ const Dashboard = () => {
         color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
-      setFixedExpensesChartData(Object.keys(expensesByNature).map(nature => ({
-        name: nature,
-        value: expensesByNature[nature],
+      setFixedExpensesChartData(Object.keys(fixedExpensesBySubcategory).map(name => ({
+        name,
+        value: fixedExpensesBySubcategory[name],
         color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
-      setVariableExpensesChartData(Object.keys(expensesByNature).map(nature => ({
-        name: nature,
-        value: expensesByNature[nature],
+      setVariableExpensesChartData(Object.keys(variableExpensesBySubcategory).map(name => ({
+        name,
+        value: variableExpensesBySubcategory[name],
         color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
       setTrendChartData(Object.keys(trendDataMap).map(month => ({
         month,
         income: trendDataMap[month].income,
-        expenses: trendDataMap[month].expenses,
+        cmv: trendDataMap[month].cmv,
+        despesasOperacionais: trendDataMap[month].expenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
-      setTrendChartServicesData(Object.keys(trendDataMap).map(month => ({
+      setTrendChartServicesData(Object.keys(trendServicesDataMap).map(month => ({
         month,
-        income: trendDataMap[month].income,
-        expenses: trendDataMap[month].expenses,
+        income: trendServicesDataMap[month].income,
+        despesasOperacionais: trendServicesDataMap[month].despesasOperacionais,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
       setTransactions(allLancamentos

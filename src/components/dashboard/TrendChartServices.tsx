@@ -4,7 +4,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 interface TrendData {
   month: string;
   income: number;
-  expenses: number;
+  despesasOperacionais: number;
 }
 
 interface TrendChartServicesProps {
