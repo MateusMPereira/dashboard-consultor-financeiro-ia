@@ -132,9 +132,16 @@ const Dashboard = () => {
         const isCurrentMonth = lancamento.data_referencia >= currentMonthStart && lancamento.data_referencia <= currentMonthEnd;
         const isPreviousMonth = lancamento.data_referencia >= previousMonthStart && lancamento.data_referencia <= previousMonthEnd;
 
+        const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
+        const variableCostKeywords = [
+          'DESPESAS VARIAVEIS', 'DESPESAS VARIÁVEIS', 'DESPESA VARIAVEL', 'DESPESA VARIÁVEL',
+          'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
+        ];
+
         const isCMV = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CMV') && lancamento.tipo === 'despesa';
-        const isFixedCost = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CUSTO FIXO') && lancamento.tipo === 'despesa';
-        const isVariableCost = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CUSTO VARIAVEL') && lancamento.tipo === 'despesa';
+        const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
+        const isFixedCost = descriptionUpperCase && fixedCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
+        const isVariableCost = descriptionUpperCase && variableCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
 
         const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
         if (!trendDataMap[monthKey]) {
