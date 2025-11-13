@@ -12,11 +12,18 @@ import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
 import { format } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
-import { Lancamento, TipoLancamento } from "@/types/lancamento";
+import { Lancamento } from "@/types/lancamento";
+
+interface Categoria {
+  id: string;
+  descricao: string;
+  natureza: "receita" | "despesa";
+}
 
 interface Subcategory {
   id: string;
   nome: string;
+  categoria_id: string;
   categorias: {
     natureza: "receita" | "despesa" | null;
   } | null;
@@ -25,6 +32,7 @@ interface Subcategory {
 const Lancamentos = () => {
   const { user, loading: authLoading } = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -35,6 +43,7 @@ const Lancamentos = () => {
     descricao: "",
     valor: "",
     data_referencia: format(new Date(), "yyyy-MM-dd"),
+    categoria_id: "",
     sub_categoria_id: "",
   });
 
@@ -69,12 +78,14 @@ const Lancamentos = () => {
       if (subcategoriesRes.error) throw subcategoriesRes.error;
       if (categoriesRes.error) throw categoriesRes.error;
 
-      const categories = categoriesRes.data || [];
+      const categoriesData = categoriesRes.data || [];
       const subcategoriesData = subcategoriesRes.data || [];
       const lancamentosData = lancamentosRes.data || [];
 
+      setCategories(categoriesData);
+
       const joinedSubcategories = subcategoriesData.map(subcat => {
-        const parentCat = categories.find(cat => cat.id === subcat.categoria_id);
+        const parentCat = categoriesData.find(cat => cat.id === subcat.categoria_id);
         return {
           ...subcat,
           categorias: parentCat || null
@@ -105,11 +116,16 @@ const Lancamentos = () => {
     try {
       if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
+      if (!formData.sub_categoria_id) {
+        toast.error("Por favor, selecione uma Categoria.");
+        return;
+      }
+
       const lancamentoData = {
         descricao: formData.descricao,
         valor: parseFloat(formData.valor),
         data_referencia: formData.data_referencia,
-        sub_categoria_id: formData.sub_categoria_id || null,
+        sub_categoria_id: formData.sub_categoria_id, // No longer optional
         empresa_id: user.empresa_id,
       };
 
@@ -144,6 +160,7 @@ const Lancamentos = () => {
       descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
       data_referencia: lancamento.data_referencia,
+      categoria_id: lancamento.subcategorias?.categoria_id || "",
       sub_categoria_id: lancamento.sub_categoria_id || "",
     });
     setDialogOpen(true);
@@ -169,6 +186,7 @@ const Lancamentos = () => {
       descricao: "",
       valor: "",
       data_referencia: format(new Date(), "yyyy-MM-dd"),
+      categoria_id: "",
       sub_categoria_id: "",
     });
   };
@@ -181,7 +199,8 @@ const Lancamentos = () => {
     .filter((l) => l.tipo === "despesa")
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
-  const filteredSubcategories = subcategories.filter(sub => sub.categorias?.natureza === naturezaFiltro);
+  const filteredCategories = categories.filter(c => c.natureza === naturezaFiltro);
+  const filteredSubcategories = subcategories.filter(sub => sub.categoria_id === formData.categoria_id);
 
   return (
     <div className="space-y-6">
@@ -220,6 +239,7 @@ const Lancamentos = () => {
                         setNaturezaFiltro(value);
                         setFormData(prev => ({
                           ...prev,
+                          categoria_id: "",
                           sub_categoria_id: "",
                         }));
                       }}
@@ -230,6 +250,51 @@ const Lancamentos = () => {
                       <SelectContent>
                         <SelectItem value="receita">Receita</SelectItem>
                         <SelectItem value="despesa">Despesa</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <Label>Categoria</Label>
+                    <Select
+                      value={formData.categoria_id}
+                      onValueChange={(value) => {
+                        setFormData(prev => ({
+                          ...prev,
+                          categoria_id: value,
+                          sub_categoria_id: "",
+                        }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredCategories.map((cat) => (
+                          <SelectItem key={cat.id} value={cat.id}>
+                            {cat.descricao}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <Label>Subcategoria</Label>
+                    <Select
+                      value={formData.sub_categoria_id}
+                      onValueChange={(value) => setFormData({ ...formData, sub_categoria_id: value })}
+                      disabled={!formData.categoria_id}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={!formData.categoria_id ? "Selecione uma categoria primeiro" : "Selecione..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {filteredSubcategories.map((sub) => (
+                          <SelectItem key={sub.id} value={sub.id}>
+                            {sub.nome}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -261,31 +326,6 @@ const Lancamentos = () => {
                       onChange={(e) => setFormData({ ...formData, data_referencia: e.target.value })}
                       required
                     />
-                  </div>
-
-                  <div>
-                    <Label>Categoria (opcional)</Label>
-                    <Select
-                      value={formData.sub_categoria_id}
-                      onValueChange={(value) => setFormData({ ...formData, sub_categoria_id: value })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={filteredSubcategories.length === 0 ? "Nenhuma categoria cadastrada" : "Selecione..."} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {filteredSubcategories.length === 0 ? (
-                          <div className="px-2 py-6 text-center text-sm text-muted-foreground">
-                            Nenhuma categoria para este tipo.<br />Cadastre na página Categorias.
-                          </div>
-                        ) : (
-                          filteredSubcategories.map((sub) => (
-                            <SelectItem key={sub.id} value={sub.id}>
-                              {sub.nome}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
                   </div>
                 </div>
               </div>
