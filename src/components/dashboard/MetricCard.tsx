@@ -20,8 +20,8 @@ export function MetricCard({
   variant = "default",
 }: MetricCardProps) {
   return (
-    <Card className="w-full p-6 bg-gradient-card shadow-card hover:shadow-elegant transition-all duration-300">
-      <div className="flex items-start justify-between">
+    <Card className="relative w-full p-6 bg-gradient-card shadow-card hover:shadow-elegant transition-all duration-300">
+      <div>
         <div className="space-y-2 mt-auto">
           <p className="text-xs font-medium text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold tracking-tight">{value}</p>
@@ -40,7 +40,7 @@ export function MetricCard({
         </div>
         <div
           className={cn(
-            "p-3 rounded-lg",
+            "absolute top-4 right-4 p-3 rounded-lg",
             variant === "success" && "bg-success/10 text-success",
             variant === "destructive" && "bg-destructive/10 text-destructive",
             variant === "default" && "bg-primary/10 text-primary"
