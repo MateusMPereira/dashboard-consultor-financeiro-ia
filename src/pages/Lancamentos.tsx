@@ -51,27 +51,47 @@ const Lancamentos = () => {
         throw new Error("Empresa não encontrada");
       }
 
-      const [lancamentosRes, subcategoriesRes] = await Promise.all([
+      const [lancamentosRes, subcategoriesRes, categoriesRes] = await Promise.all([
         supabase
           .from("lancamentos")
-          .select("*, subcategorias(*, categorias(*))")
+          .select("*")
           .eq("empresa_id", user.empresa_id)
           .order("data_referencia", { ascending: false }),
-        supabase.from("subcategorias").select("*, categorias(natureza)")
+        supabase
+          .from("subcategorias")
+          .select("*")
           .eq("empresa_id", user.empresa_id)
-          .eq("ativo", true)
+          .eq("ativo", true),
+        supabase.from("categorias").select("*")
       ]);
 
       if (lancamentosRes.error) throw lancamentosRes.error;
       if (subcategoriesRes.error) throw subcategoriesRes.error;
+      if (categoriesRes.error) throw categoriesRes.error;
 
-      const lancamentosData: Lancamento[] = (lancamentosRes.data || []).map((item: any) => ({
-        ...item,
-        tipo: item.subcategorias?.categorias?.natureza || 'despesa',
-      }));
+      const categories = categoriesRes.data || [];
+      const subcategoriesData = subcategoriesRes.data || [];
+      const lancamentosData = lancamentosRes.data || [];
 
-      setLancamentos(lancamentosData);
-      setSubcategories(subcategoriesRes.data || []);
+      const joinedSubcategories = subcategoriesData.map(subcat => {
+        const parentCat = categories.find(cat => cat.id === subcat.categoria_id);
+        return {
+          ...subcat,
+          categorias: parentCat || null
+        };
+      });
+      setSubcategories(joinedSubcategories);
+
+      const joinedLancamentos: Lancamento[] = lancamentosData.map((lancamento: any) => {
+        const subcat = joinedSubcategories.find(sc => sc.id === lancamento.sub_categoria_id);
+        return {
+          ...lancamento,
+          subcategorias: subcat,
+          tipo: subcat?.categorias?.natureza || 'despesa',
+        };
+      });
+
+      setLancamentos(joinedLancamentos);
     } catch (error: any) {
       toast.error("Erro ao carregar dados: " + error.message);
     } finally {

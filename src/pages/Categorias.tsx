@@ -62,48 +62,52 @@ const CategoriasPage = () => {
     descricao: "",
   });
 
-  useEffect(() => {
-    if (!authLoading && user?.empresa_id) {
-      fetchCategories();
-      fetchSubcategories();
-    }
-  }, [authLoading, user?.empresa_id]);
-
-  const fetchCategories = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("categorias")
-        .select("id, descricao, natureza");
-
-      if (error) throw error;
-      setCategories(data || []);
-    } catch (error: any) {
-      toast.error("Erro ao carregar categorias: " + error.message);
-    }
-  };
-
-  const fetchSubcategories = async () => {
+  const fetchData = async () => {
     setLoading(true);
     try {
-      if (!user?.empresa_id) {
-        throw new Error("Empresa não encontrada");
-      }
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
-      const { data, error } = await supabase
-        .from("subcategorias")
-        .select("*, categorias(natureza, descricao)")
-        .eq("ativo", true)
-        .eq("empresa_id", user.empresa_id)
-        .order("nome");
+      // 1. Fetch Categories and Subcategories in parallel
+      const [categoriesRes, subcategoriesRes] = await Promise.all([
+        supabase.from("categorias").select("id, descricao, natureza"),
+        supabase
+          .from("subcategorias")
+          .select("*")
+          .eq("ativo", true)
+          .eq("empresa_id", user.empresa_id)
+          .order("nome")
+      ]);
 
-      if (error) throw error;
-      setSubcategories(data || []);
+      if (categoriesRes.error) throw categoriesRes.error;
+      if (subcategoriesRes.error) throw subcategoriesRes.error;
+
+      const categoriesData = categoriesRes.data || [];
+      const subcategoriesData = subcategoriesRes.data || [];
+      
+      setCategories(categoriesData);
+
+      // 2. Manually join subcategories with their parent category
+      const joinedSubcategories = subcategoriesData.map(subcat => {
+        const parentCat = categoriesData.find(cat => cat.id === subcat.categoria_id);
+        return {
+          ...subcat,
+          categorias: parentCat ? { natureza: parentCat.natureza, descricao: parentCat.descricao } : null
+        };
+      });
+      setSubcategories(joinedSubcategories);
+
     } catch (error: any) {
-      toast.error("Erro ao carregar subcategorias: " + error.message);
+      toast.error("Erro ao carregar dados: " + error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!authLoading && user?.empresa_id) {
+      fetchData();
+    }
+  }, [authLoading, user?.empresa_id]);
 
   const resetForm = () => {
     setFormData({
@@ -153,7 +157,7 @@ const CategoriasPage = () => {
 
       setIsOpen(false);
       resetForm();
-      fetchSubcategories();
+      fetchData(); // Refetch all data
     } catch (error: any) {
       toast.error("Erro ao salvar subcategoria: " + error.message);
     }
@@ -186,7 +190,7 @@ const CategoriasPage = () => {
 
       if (error) throw error;
       toast.success("Subcategoria removida com sucesso!");
-      fetchSubcategories();
+      fetchData(); // Refetch all data
     } catch (error: any) {
       toast.error("Erro ao excluir subcategoria: " + error.message);
     }
@@ -334,7 +338,7 @@ const CategoriasPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {incomeSubcategories.length === 0 ? (
+            {loading ? <div className="text-center py-8">Carregando...</div> : incomeSubcategories.length === 0 ? (
               <div className="text-center py-8">
                 <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
@@ -395,7 +399,7 @@ const CategoriasPage = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {expenseSubcategories.length === 0 ? (
+            {loading ? <div className="text-center py-8">Carregando...</div> : expenseSubcategories.length === 0 ? (
               <div className="text-center py-8">
                 <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
