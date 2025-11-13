@@ -15,6 +15,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -55,6 +61,7 @@ const CategoriasPage = () => {
   const [subcategories, setSubcategories] = useState<Subcategoria[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState<'receita' | 'despesa'>('despesa');
   const [naturezaFiltro, setNaturezaFiltro] = useState<'receita' | 'despesa'>('despesa');
   const [formData, setFormData] = useState({
     nome: "",
@@ -116,7 +123,6 @@ const CategoriasPage = () => {
       descricao: "",
     });
     setEditingSubcategory(null);
-    setNaturezaFiltro('despesa');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -214,7 +220,10 @@ const CategoriasPage = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => {
+              resetForm();
+              setNaturezaFiltro(activeTab);
+            }}>
               <Plus className="h-4 w-4" />
               Nova Subcategoria
             </Button>
@@ -323,129 +332,134 @@ const CategoriasPage = () => {
         </Dialog>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-2">
-        {/* Income Subcategories */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="h-5 w-5 text-green-500" />
-              Subcategorias de Receita
-            </CardTitle>
-            <CardDescription>
-              {incomeSubcategories.length === 0
-                ? "Nenhuma subcategoria de receita cadastrada"
-                : `${incomeSubcategories.length} subcategoria(s) de receita`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? <div className="text-center py-8">Carregando...</div> : incomeSubcategories.length === 0 ? (
-              <div className="text-center py-8">
-                <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma subcategoria de receita
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {incomeSubcategories.map((subcat) => (
-                  <div
-                    key={subcat.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium">{subcat.nome}</p>
-                        {subcat.descricao && (
-                          <p className="text-xs text-muted-foreground">
-                            {subcat.descricao}
-                          </p>
-                        )}
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'receita' | 'despesa')} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="despesa">Despesas</TabsTrigger>
+          <TabsTrigger value="receita">Receitas</TabsTrigger>
+        </TabsList>
+        <TabsContent value="despesa">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingDown className="h-5 w-5 text-red-500" />
+                Subcategorias de Despesa
+              </CardTitle>
+              <CardDescription>
+                {expenseSubcategories.length === 0
+                  ? "Nenhuma subcategoria de despesa cadastrada"
+                  : `${expenseSubcategories.length} subcategoria(s) de despesa`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? <div className="text-center py-8">Carregando...</div> : expenseSubcategories.length === 0 ? (
+                <div className="text-center py-8">
+                  <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma subcategoria de despesa
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {expenseSubcategories.map((subcat) => (
+                    <div
+                      key={subcat.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="font-medium">{subcat.nome}</p>
+                          {subcat.descricao && (
+                            <p className="text-xs text-muted-foreground">
+                              {subcat.descricao}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(subcat)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(subcat.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(subcat)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(subcat.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Expense Subcategories */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingDown className="h-5 w-5 text-red-500" />
-              Subcategorias de Despesa
-            </CardTitle>
-            <CardDescription>
-              {expenseSubcategories.length === 0
-                ? "Nenhuma subcategoria de despesa cadastrada"
-                : `${expenseSubcategories.length} subcategoria(s) de despesa`}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {loading ? <div className="text-center py-8">Carregando...</div> : expenseSubcategories.length === 0 ? (
-              <div className="text-center py-8">
-                <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
-                <p className="text-sm text-muted-foreground">
-                  Nenhuma subcategoria de despesa
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {expenseSubcategories.map((subcat) => (
-                  <div
-                    key={subcat.id}
-                    className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div>
-                        <p className="font-medium">{subcat.nome}</p>
-                        {subcat.descricao && (
-                          <p className="text-xs text-muted-foreground">
-                            {subcat.descricao}
-                          </p>
-                        )}
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="receita">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TrendingUp className="h-5 w-5 text-green-500" />
+                Subcategorias de Receita
+              </CardTitle>
+              <CardDescription>
+                {incomeSubcategories.length === 0
+                  ? "Nenhuma subcategoria de receita cadastrada"
+                  : `${incomeSubcategories.length} subcategoria(s) de receita`}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? <div className="text-center py-8">Carregando...</div> : incomeSubcategories.length === 0 ? (
+                <div className="text-center py-8">
+                  <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma subcategoria de receita
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {incomeSubcategories.map((subcat) => (
+                    <div
+                      key={subcat.id}
+                      className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div>
+                          <p className="font-medium">{subcat.nome}</p>
+                          {subcat.descricao && (
+                            <p className="text-xs text-muted-foreground">
+                              {subcat.descricao}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleEdit(subcat)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDelete(subcat.id)}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleEdit(subcat)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDelete(subcat.id)}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
