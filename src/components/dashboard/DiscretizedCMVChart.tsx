@@ -7,15 +7,16 @@ interface ChartData {
   color: string;
 }
 
-interface IncomesChartProps {
+interface ExpensesChartProps {
   data: ChartData[];
 }
 
-export function IncomesChart({ data }: IncomesChartProps) {
+export function DiscretizedCMVChart({ data }: ExpensesChartProps) {
   return (
     <Card className="p-6 shadow-card">
-      <h3 className="text-xl font-bold mb-4">Receitas por Categoria</h3>
-      <ResponsiveContainer width="100%" height={250}>
+      <h3 className="text-xl font-bold">CMV Discretizado</h3>
+      <h6 className="text-md mb-4">Mês atual</h6>
+      <ResponsiveContainer width="100%" height={300}>
         <PieChart>
           <Pie
             data={data}

@@ -7,14 +7,14 @@ interface TrendData {
   expenses: number;
 }
 
-interface TrendChartProps {
+interface TrendChartServicesProps {
   data: TrendData[];
 }
 
-export function TrendChart({ data }: TrendChartProps) {
+export function TrendChartServices({ data }: TrendChartServicesProps) {
   return (
     <Card className="p-6 shadow-card">
-      <h3 className="text-xl font-bold">Receita vs CMV vs Despesas Operacionais</h3>
+      <h3 className="text-xl font-bold">Receita vs Despesas Operacionais</h3>
       <h6 className="text-md mb-4">Últimos 6 meses</h6>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={data}>
@@ -36,19 +36,11 @@ export function TrendChart({ data }: TrendChartProps) {
           />
           <Line
             type="monotone"
-            dataKey="cmv"
+            dataKey="despesasOperacionais"
             stroke="hsl(var(--destructive))"
             strokeWidth={2}
-            name="CMV"
-            dot={{ fill: "hsl(var(--destructive))" }}
-          />
-          <Line
-            type="monotone"
-            dataKey="despesasOperacionais"
-            stroke="hsl(var(--warning))"
-            strokeWidth={2}
             name="Despesas Operacionais"
-            dot={{ fill: "hsl(var(--warning))" }}
+            dot={{ fill: "hsl(var(--destructive))" }}
           />
         </LineChart>
       </ResponsiveContainer>

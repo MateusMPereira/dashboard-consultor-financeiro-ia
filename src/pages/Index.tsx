@@ -1,7 +1,7 @@
 import { Wallet, TrendingUp, TrendingDown, DollarSign, AlertTriangle } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { TransactionsList } from "@/components/dashboard/TransactionsList";
-import { ExpensesChart } from "@/components/dashboard/ExpensesChart";
+import { ExpensesChart } from "@/components/dashboard/DiscretizedCMVChart";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { AlertsList } from "@/components/dashboard/AlertsList";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";

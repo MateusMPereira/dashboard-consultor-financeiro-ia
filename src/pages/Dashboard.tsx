@@ -2,20 +2,41 @@ import { useState, useEffect } from "react";
 import { PieChart, ShoppingCart, Calculator, DollarSign, Target } from "lucide-react";
 import { MetricCard } from "@/components/dashboard/MetricCard";
 import { TransactionsList } from "@/components/dashboard/TransactionsList";
-import { ExpensesChart } from "@/components/dashboard/ExpensesChart";
+import { DiscretizedCMVChart } from "@/components/dashboard/DiscretizedCMVChart";
+import { FixedExpensesChart } from "@/components/dashboard/FixedExpensesChart";
+import { VariableExpensesChart } from "@/components/dashboard/VariableExpensesChart";
 import { TrendChart } from "@/components/dashboard/TrendChart";
+import { TrendChartServices } from "@/components/dashboard/TrendChartServices";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { Transaction } from "@/components/dashboard/TransactionsList";
 
-interface ExpenseData {
+interface DiscretizedCMVData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface FixedExpenseData {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface VariableExpenseData {
   name: string;
   value: number;
   color: string;
 }
 
 interface TrendData {
+  month: string;
+  income: number;
+  expenses: number;
+}
+
+interface TrendServicesData {
   month: string;
   income: number;
   expenses: number;
@@ -37,8 +58,11 @@ const Dashboard = () => {
     ebitda: 0,
     previousEbitda: 0,
   });
-  const [expensesChartData, setExpensesChartData] = useState<ExpenseData[]>([]);
+  const [discretizedCMVChartData, setDiscretizedCMVChartData] = useState<DiscretizedCMVData[]>([]);
+  const [fixedExpensesChartData, setFixedExpensesChartData] = useState<FixedExpenseData[]>([]);
+  const [variableExpensesChartData, setVariableExpensesChartData] = useState<VariableExpenseData[]>([]);
   const [trendChartData, setTrendChartData] = useState<TrendData[]>([]);
+  const [trendChartServicesData, setTrendChartServicesData] = useState<TrendServicesData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -97,7 +121,8 @@ const Dashboard = () => {
       let previousEbitda = 0;
 
       const expensesByNature: { [key: string]: number } = {};
-      const trendDataMap: { [key: string]: { income: number; expenses: number } } = {};
+      const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
+      const trendServicesDataMap: { [key: string]: { income: number; expenses: number } } = {};
 
       allLancamentos.forEach((lancamento: any) => {
         const amount = parseFloat(lancamento.valor);
@@ -117,12 +142,24 @@ const Dashboard = () => {
 
         const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
         if (!trendDataMap[monthKey]) {
-          trendDataMap[monthKey] = { income: 0, expenses: 0 };
+          trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
         }
         if (lancamento.tipo === "receita") {
           trendDataMap[monthKey].income += amount;
+        } else if (lancamento.tipo === "cmv") {
+          trendDataMap[monthKey].cmv += amount;
         } else {
           trendDataMap[monthKey].expenses += amount;
+        }
+
+        const monthKeyServices = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
+        if (!trendServicesDataMap[monthKeyServices]) {
+          trendServicesDataMap[monthKeyServices] = { income: 0, expenses: 0 };
+        }
+        if (lancamento.tipo === "receita") {
+          trendServicesDataMap[monthKeyServices].income += amount;
+        } else {
+          trendServicesDataMap[monthKeyServices].expenses += amount;
         }
       });      
 
@@ -140,13 +177,31 @@ const Dashboard = () => {
         previousEbitda
       });
 
-      setExpensesChartData(Object.keys(expensesByNature).map(nature => ({
+      setDiscretizedCMVChartData(Object.keys(expensesByNature).map(nature => ({
+        name: nature,
+        value: expensesByNature[nature],
+        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+      })));
+
+      setFixedExpensesChartData(Object.keys(expensesByNature).map(nature => ({
+        name: nature,
+        value: expensesByNature[nature],
+        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+      })));
+
+      setVariableExpensesChartData(Object.keys(expensesByNature).map(nature => ({
         name: nature,
         value: expensesByNature[nature],
         color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
       setTrendChartData(Object.keys(trendDataMap).map(month => ({
+        month,
+        income: trendDataMap[month].income,
+        expenses: trendDataMap[month].expenses,
+      })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
+
+      setTrendChartServicesData(Object.keys(trendDataMap).map(month => ({
         month,
         income: trendDataMap[month].income,
         expenses: trendDataMap[month].expenses,
@@ -235,7 +290,7 @@ const Dashboard = () => {
           variant="destructive"
         />
         <MetricCard
-          title="Marge de Contribuição"
+          title="Margem de Contribuição"
           value={formatCurrency(metrics.contributionMargin)}
           change={getChangeValue(metrics.contributionMargin, metrics.previousContributionMargin)}
           changeType={getChangeType(metrics.contributionMargin, metrics.previousContributionMargin)}
@@ -254,11 +309,24 @@ const Dashboard = () => {
 
       {/* Charts Grid */}
       <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-[40%]">
-          <ExpensesChart data={expensesChartData} />
+        <div className="lg:w-[33%]">
+          <DiscretizedCMVChart data={discretizedCMVChartData} />
         </div>
-        <div className="lg:w-[60%]">
+        <div className="lg:w-[33%]">
+          <FixedExpensesChart data={fixedExpensesChartData} />
+        </div>
+        <div className="lg:w-[34%]">
+          <VariableExpensesChart data={variableExpensesChartData} />
+        </div>
+      </div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-[100%]">
           <TrendChart data={trendChartData} />
+        </div>
+      </div>
+      <div className="flex flex-col lg:flex-row gap-6">
+        <div className="lg:w-[100%]">
+          <TrendChartServices data={trendChartServicesData} />
         </div>
       </div>
 
