@@ -20,9 +20,9 @@ export function MetricCard({
   variant = "default",
 }: MetricCardProps) {
   return (
-    <Card className="p-6 bg-gradient-card shadow-card hover:shadow-elegant transition-all duration-300">
+    <Card className="w-full p-6 bg-gradient-card shadow-card hover:shadow-elegant transition-all duration-300">
       <div className="flex items-start justify-between">
-        <div className="space-y-2">
+        <div className="space-y-2 mt-auto">
           <p className="text-xs font-medium text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold tracking-tight">{value}</p>
           {change && (
