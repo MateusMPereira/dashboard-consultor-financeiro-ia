@@ -16,7 +16,7 @@ import { Transaction } from "@/components/dashboard/TransactionsList";
 // ... (rest of the file)
 
 const Dashboard = () => {
-  const { user, loading: authLoading } = useAuth();
+  const { user, empresa, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [metrics, setMetrics] = useState({
@@ -32,29 +32,30 @@ const Dashboard = () => {
     ebitda: 0,
     previousEbitda: 0,
   });
-  const [discretizedCMVChartData, setDiscretizedCMVChartData] = useState<DiscretizedCMVData[]>([]);
-  const [fixedExpensesChartData, setFixedExpensesChartData] = useState<FixedExpenseData[]>([]);
-  const [variableExpensesChartData, setVariableExpensesChartData] = useState<VariableExpenseData[]>([]);
-  const [trendChartData, setTrendChartData] = useState<TrendData[]>([]);
-  const [trendChartServicesData, setTrendChartServicesData] = useState<TrendServicesData[]>([]);
+  const [discretizedCMVChartData, setDiscretizedCMVChartData] = useState<any[]>([]);
+  const [fixedExpensesChartData, setFixedExpensesChartData] = useState<any[]>([]);
+  const [variableExpensesChartData, setVariableExpensesChartData] = useState<any[]>([]);
+  const [trendChartData, setTrendChartData] = useState<any[]>([]);
+  const [trendChartServicesData, setTrendChartServicesData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!authLoading && user?.empresa_id) {
+    if (!authLoading && (empresa?.id || user?.empresa_id)) {
       fetchTrendsAndTransactionsData();
     }
-  }, [authLoading, user?.empresa_id]);
+  }, [authLoading, empresa?.id, user?.empresa_id]);
 
   useEffect(() => {
-    if (!authLoading && user?.empresa_id) {
+    if (!authLoading && (empresa?.id || user?.empresa_id)) {
       fetchCardsAndPiesData(selectedDate);
     }
-  }, [authLoading, user?.empresa_id, selectedDate]);
+  }, [authLoading, empresa?.id, user?.empresa_id, selectedDate]);
 
   const fetchCardsAndPiesData = async (date: Date) => {
     setLoading(true);
     try {
-      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+      const empresaId = empresa?.id || user?.empresa_id;
+      if (!empresaId) throw new Error("Empresa não encontrada");
 
       const currentMonthStart = format(startOfMonth(date), "yyyy-MM-dd");
       const currentMonthEnd = format(endOfMonth(date), "yyyy-MM-dd");
@@ -64,7 +65,7 @@ const Dashboard = () => {
       const { data: lancamentos, error } = await supabase
         .from("lancamentos")
         .select("*, subcategorias(*, categorias(*))")
-        .eq("empresa_id", user.empresa_id)
+        .eq("empresa_id", empresaId)
         .gte("data_referencia", previousMonthStart)
         .lte("data_referencia", currentMonthEnd);
 
@@ -170,7 +171,8 @@ const Dashboard = () => {
 
   const fetchTrendsAndTransactionsData = async () => {
     try {
-      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+      const empresaId = empresa?.id || user?.empresa_id;
+      if (!empresaId) throw new Error("Empresa não encontrada");
 
       const today = new Date();
       const sixMonthsAgo = startOfMonth(subMonths(today, 5)); // 5 months ago to include current month
@@ -179,7 +181,7 @@ const Dashboard = () => {
       const { data: lancamentos, error } = await supabase
         .from("lancamentos")
         .select("*, subcategorias(*, categorias(*))")
-        .eq("empresa_id", user.empresa_id)
+        .eq("empresa_id", empresaId)
         .gte("data_referencia", format(sixMonthsAgo, "yyyy-MM-dd"))
         .lte("data_referencia", format(currentMonthEnd, "yyyy-MM-dd"));
 
@@ -190,8 +192,9 @@ const Dashboard = () => {
         tipo: item.subcategorias?.categorias?.natureza || 'despesa',
       }));
 
-      const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
-      const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
+  const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
+  const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
+  const atividade = (empresa as any)?.atividade || undefined;
       
       const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
       const variableCostKeywords = [
@@ -218,30 +221,44 @@ const Dashboard = () => {
         const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
 
         if (lancamento.tipo === "receita") {
-          trendDataMap[monthKey].income += amount;
-          trendServicesDataMap[monthKey].income += amount;
+          if (atividade === 'varejo') {
+            trendDataMap[monthKey].income += amount;
+          }
+          if (atividade === 'servico') {
+            trendServicesDataMap[monthKey].income += amount;
+          }
         } else { // Non-revenue
           if (isCMV) {
-            trendDataMap[monthKey].cmv += amount;
+            if (atividade === 'varejo') trendDataMap[monthKey].cmv += amount;
           } else { // Operating Expense
-            trendDataMap[monthKey].expenses += amount;
-            trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
+            if (atividade === 'varejo') trendDataMap[monthKey].expenses += amount;
+            if (atividade === 'servico') trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
           }
         }
       });
 
-      setTrendChartData(Object.keys(trendDataMap).map(month => ({
-        month,
-        income: trendDataMap[month].income,
-        cmv: trendDataMap[month].cmv,
-        despesasOperacionais: trendDataMap[month].expenses,
-      })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
-
-      setTrendChartServicesData(Object.keys(trendServicesDataMap).map(month => ({
-        month,
-        income: trendServicesDataMap[month].income,
-        trendOperatingExpenses: trendServicesDataMap[month].trendOperatingExpenses,
-      })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
+      if (atividade === 'varejo') {
+        setTrendChartData(Object.keys(trendDataMap).map(month => ({
+          month,
+          income: trendDataMap[month].income,
+          cmv: trendDataMap[month].cmv,
+          despesasOperacionais: trendDataMap[month].expenses,
+        })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
+        // clear services chart data
+        setTrendChartServicesData([]);
+      } else if (atividade === 'servico') {
+        setTrendChartServicesData(Object.keys(trendServicesDataMap).map(month => ({
+          month,
+          income: trendServicesDataMap[month].income,
+          trendOperatingExpenses: trendServicesDataMap[month].trendOperatingExpenses,
+        })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
+        // clear varejo chart data
+        setTrendChartData([]);
+      } else {
+        // If atividade not defined, clear both
+        setTrendChartData([]);
+        setTrendChartServicesData([]);
+      }
 
       const currentMonthStartForTransactions = format(startOfMonth(today), "yyyy-MM-dd");
       setTransactions(allLancamentos
@@ -355,12 +372,8 @@ const Dashboard = () => {
       </div>
       <div className="flex flex-col lg:flex-row gap-6">
         <div className="lg:w-[100%]">
-          <TrendChart data={trendChartData} />
-        </div>
-      </div>
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-[100%]">
-          <TrendChartServices data={trendChartServicesData} />
+          {((empresa as any)?.atividade === 'varejo') && <TrendChart data={trendChartData} />}
+          {((empresa as any)?.atividade === 'servico') && <TrendChartServices data={trendChartServicesData} />}
         </div>
       </div>
 
