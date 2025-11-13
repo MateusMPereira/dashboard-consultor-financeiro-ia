@@ -268,8 +268,8 @@ const Dashboard = () => {
         <MetricCard
           title="Receita Líquida"
           value={formatCurrency(metrics.netIncomes)}
-          change=""
-          changeType="neutral"
+          change={getChangeValue(metrics.netIncomes, metrics.previousNetIncomes)}
+          changeType={getChangeType(metrics.netIncomes, metrics.previousNetIncomes)}
           icon={DollarSign}
           variant="default"
         />
