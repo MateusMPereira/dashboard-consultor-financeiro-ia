@@ -138,8 +138,15 @@ const Dashboard = () => {
           'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
         ];
 
-        const isCMV = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CMV') && lancamento.tipo === 'despesa';
+        const cmvKeywords = [
+          'CMV',
+          'CUSTO DE MERCADORIA VENDIDA',
+          'CUSTOS DE MERCADORIA VENDIDA',
+          'CUSTO POR MERCADORIA VENDIDA',
+          'CUSTOS POR MERCADORIA VENDIDA'
+        ];
         const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
+        const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
         const isFixedCost = descriptionUpperCase && fixedCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
         const isVariableCost = descriptionUpperCase && variableCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
 
