@@ -55,6 +55,7 @@ const CategoriasPage = () => {
   const [subcategories, setSubcategories] = useState<Subcategoria[]>([]);
   const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(true);
+  const [naturezaFiltro, setNaturezaFiltro] = useState<'receita' | 'despesa'>('despesa');
   const [formData, setFormData] = useState({
     nome: "",
     categoria_id: "",
@@ -111,6 +112,7 @@ const CategoriasPage = () => {
       descricao: "",
     });
     setEditingSubcategory(null);
+    setNaturezaFiltro('despesa');
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,7 +121,7 @@ const CategoriasPage = () => {
     try {
       if (!user?.empresa_id) throw new Error("Empresa não encontrada");
       if (!formData.categoria_id) {
-        toast.error("Por favor, selecione uma categoria pai.");
+        toast.error("Por favor, selecione uma Categoria.");
         return;
       }
 
@@ -139,26 +141,32 @@ const CategoriasPage = () => {
           .eq("id", editingSubcategory.id);
 
         if (error) throw error;
-        toast.success("Categoria atualizada com sucesso!");
+        toast.success("Subcategoria atualizada com sucesso!");
       } else {
         const { error } = await supabase
           .from("subcategorias")
           .insert(subcategoryData);
 
         if (error) throw error;
-        toast.success("Categoria cadastrada com sucesso!");
+        toast.success("Subcategoria cadastrada com sucesso!");
       }
 
       setIsOpen(false);
       resetForm();
       fetchSubcategories();
     } catch (error: any) {
-      toast.error("Erro ao salvar categoria: " + error.message);
+      toast.error("Erro ao salvar subcategoria: " + error.message);
     }
   };
 
   const handleEdit = (subcategory: Subcategoria) => {
     setEditingSubcategory(subcategory);
+    
+    const parentCategory = categories.find(c => c.id === subcategory.categoria_id);
+    if (parentCategory) {
+      setNaturezaFiltro(parentCategory.natureza);
+    }
+
     setFormData({
         nome: subcategory.nome,
         categoria_id: subcategory.categoria_id,
@@ -168,33 +176,33 @@ const CategoriasPage = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Tem certeza que deseja excluir esta categoria?")) return;
+    if (!confirm("Tem certeza que deseja excluir esta subcategoria?")) return;
 
     try {
-      // We "soft delete" by setting ativo to false
       const { error } = await supabase
         .from("subcategorias")
         .update({ ativo: false })
         .eq("id", id);
 
       if (error) throw error;
-      toast.success("Categoria removida com sucesso!");
+      toast.success("Subcategoria removida com sucesso!");
       fetchSubcategories();
     } catch (error: any) {
-      toast.error("Erro ao excluir categoria: " + error.message);
+      toast.error("Erro ao excluir subcategoria: " + error.message);
     }
   };
 
   const incomeSubcategories = subcategories.filter(c => c.categorias?.natureza === "receita");
   const expenseSubcategories = subcategories.filter(c => c.categorias?.natureza === "despesa");
+  const filteredCategories = categories.filter(c => c.natureza === naturezaFiltro);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold">Categorias</h1>
+          <h1 className="text-3xl font-bold">Subcategorias</h1>
           <p className="text-muted-foreground mt-1">
-            Organize seus lançamentos financeiros por categorias.
+            Organize seus lançamentos financeiros em subcategorias.
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => {
@@ -204,23 +212,23 @@ const CategoriasPage = () => {
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Nova Categoria
+              Nova Subcategoria
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-md">
             <DialogHeader>
               <DialogTitle>
-                {editingSubcategory ? "Editar Categoria" : "Nova Categoria"}
+                {editingSubcategory ? "Editar Subcategoria" : "Nova Subcategoria"}
               </DialogTitle>
               <DialogDescription>
                 {editingSubcategory
-                  ? "Atualize as informações da categoria"
-                  : "Preencha os dados da nova categoria"}
+                  ? "Atualize as informações da subcategoria"
+                  : "Preencha os dados da nova subcategoria"}
               </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <Label htmlFor="nome">Nome da Categoria *</Label>
+                <Label htmlFor="nome">Nome da Subcategoria *</Label>
                 <Input
                   id="nome"
                   value={formData.nome}
@@ -229,9 +237,38 @@ const CategoriasPage = () => {
                   placeholder="Ex: Fornecedor de Carnes, Aluguel"
                 />
               </div>
+
+              <div>
+                <Label htmlFor="natureza">Natureza *</Label>
+                <Select
+                  value={naturezaFiltro}
+                  onValueChange={(value: 'receita' | 'despesa') => {
+                    setNaturezaFiltro(value);
+                    setFormData(prev => ({ ...prev, categoria_id: "" }));
+                  }}
+                >
+                  <SelectTrigger id="natureza">
+                    <SelectValue placeholder="Selecione a natureza" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="despesa">
+                      <div className="flex items-center gap-2">
+                        <TrendingDown className="h-4 w-4 text-red-500" />
+                        Despesa
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="receita">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="h-4 w-4 text-green-500" />
+                        Receita
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               
               <div>
-                <Label htmlFor="categoria_pai">Grupo da Categoria *</Label>
+                <Label htmlFor="categoria_pai">Categoria *</Label>
                 <Select
                   value={formData.categoria_id}
                   onValueChange={(value) =>
@@ -239,15 +276,12 @@ const CategoriasPage = () => {
                   }
                 >
                   <SelectTrigger id="categoria_pai">
-                    <SelectValue placeholder="Selecione o grupo" />
+                    <SelectValue placeholder="Selecione a categoria" />
                   </SelectTrigger>
                   <SelectContent>
-                    {categories.map((cat) => (
+                    {filteredCategories.map((cat) => (
                       <SelectItem key={cat.id} value={cat.id}>
-                        <div className="flex items-center gap-2">
-                          {cat.natureza === 'receita' ? <TrendingUp className="h-4 w-4 text-green-500" /> : <TrendingDown className="h-4 w-4 text-red-500" />}
-                          {cat.descricao}
-                        </div>
+                        {cat.descricao}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -260,7 +294,7 @@ const CategoriasPage = () => {
                   id="descricao"
                   value={formData.descricao}
                   onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                  placeholder="Descrição da categoria (opcional)"
+                  placeholder="Descrição da subcategoria (opcional)"
                   rows={3}
                 />
               </div>
@@ -286,17 +320,17 @@ const CategoriasPage = () => {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-2">
-        {/* Income Categories */}
+        {/* Income Subcategories */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-green-500" />
-              Receitas
+              Subcategorias de Receita
             </CardTitle>
             <CardDescription>
               {incomeSubcategories.length === 0
-                ? "Nenhuma categoria de receita cadastrada"
-                : `${incomeSubcategories.length} categoria(s) de receita`}
+                ? "Nenhuma subcategoria de receita cadastrada"
+                : `${incomeSubcategories.length} subcategoria(s) de receita`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -304,7 +338,7 @@ const CategoriasPage = () => {
               <div className="text-center py-8">
                 <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma categoria de receita
+                  Nenhuma subcategoria de receita
                 </p>
               </div>
             ) : (
@@ -347,17 +381,17 @@ const CategoriasPage = () => {
           </CardContent>
         </Card>
 
-        {/* Expense Categories */}
+        {/* Expense Subcategories */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <TrendingDown className="h-5 w-5 text-red-500" />
-              Despesas
+              Subcategorias de Despesa
             </CardTitle>
             <CardDescription>
               {expenseSubcategories.length === 0
-                ? "Nenhuma categoria de despesa cadastrada"
-                : `${expenseSubcategories.length} categoria(s) de despesa`}
+                ? "Nenhuma subcategoria de despesa cadastrada"
+                : `${expenseSubcategories.length} subcategoria(s) de despesa`}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -365,7 +399,7 @@ const CategoriasPage = () => {
               <div className="text-center py-8">
                 <Tag className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm text-muted-foreground">
-                  Nenhuma categoria de despesa
+                  Nenhuma subcategoria de despesa
                 </p>
               </div>
             ) : (
