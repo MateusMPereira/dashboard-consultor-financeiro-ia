@@ -34,7 +34,7 @@ interface TrendData {
   month: string;
   income: number;
   cmv: number;
-  expenses: number;
+  despesasOperacionais: number;
 }
 
 interface TrendServicesData {
@@ -216,7 +216,7 @@ const Dashboard = () => {
         month,
         income: trendDataMap[month].income,
         cmv: trendDataMap[month].cmv,
-        expenses: trendDataMap[month].expenses,
+        despesasOperacionais: trendDataMap[month].expenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
       setTrendChartServicesData(Object.keys(trendServicesDataMap).map(month => ({
