@@ -21,7 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
-import { format } from "date-fns";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { useAuth } from "@/contexts/AuthContext";
 
 import { Lancamento } from "@/types/lancamento";
@@ -204,12 +204,17 @@ const Lancamentos = () => {
     });
   };
 
+  // Totals for current month only
+  const today = new Date();
+  const currentMonthStart = format(startOfMonth(today), "yyyy-MM-dd");
+  const currentMonthEnd = format(endOfMonth(today), "yyyy-MM-dd");
+
   const totalReceitas = lancamentos
-    .filter((l) => l.tipo === "receita")
+    .filter((l) => l.tipo === "receita" && l.data_referencia >= currentMonthStart && l.data_referencia <= currentMonthEnd)
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
   const totalDespesas = lancamentos
-    .filter((l) => l.tipo === "despesa")
+    .filter((l) => l.tipo === "despesa" && l.data_referencia >= currentMonthStart && l.data_referencia <= currentMonthEnd)
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
   const filteredCategories = categories.filter(c => c.natureza === naturezaFiltro);
@@ -360,7 +365,7 @@ const Lancamentos = () => {
       <div className="grid gap-6 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Receitas</CardTitle>
+            <CardTitle className="text-sm font-medium">Receita Líquida</CardTitle>
             <TrendingUp className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -372,7 +377,7 @@ const Lancamentos = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Despesas</CardTitle>
+            <CardTitle className="text-sm font-medium">Margem de Contribuição</CardTitle>
             <TrendingDown className="h-4 w-4 text-red-500" />
           </CardHeader>
           <CardContent>
@@ -384,7 +389,7 @@ const Lancamentos = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Saldo</CardTitle>
+            <CardTitle className="text-sm font-medium">Ebitda</CardTitle>
           </CardHeader>
           <CardContent>
             <div className={`text-2xl font-bold ${totalReceitas - totalDespesas >= 0 ? "text-green-600" : "text-red-600"}`}>

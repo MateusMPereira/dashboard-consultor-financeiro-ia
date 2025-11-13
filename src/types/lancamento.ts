@@ -11,7 +11,9 @@ export interface Lancamento {
   created_at: string
   updated_at: string | null
   subcategorias?: {
+    id?: string
     nome: string
+    categoria_id?: string
     categorias: {
       natureza: "receita" | "despesa" | null
     } | null
