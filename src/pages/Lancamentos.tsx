@@ -5,7 +5,19 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, TrendingUp, TrendingDown } from "lucide-react";
@@ -38,6 +50,7 @@ const Lancamentos = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLancamento, setEditingLancamento] = useState<Lancamento | null>(null);
   const [naturezaFiltro, setNaturezaFiltro] = useState<'receita' | 'despesa'>('despesa');
+  const [activeTab, setActiveTab] = useState<'receita' | 'despesa'>('despesa');
 
   const [formData, setFormData] = useState({
     descricao: "",
@@ -202,6 +215,9 @@ const Lancamentos = () => {
   const filteredCategories = categories.filter(c => c.natureza === naturezaFiltro);
   const filteredSubcategories = subcategories.filter(sub => sub.categoria_id === formData.categoria_id);
 
+  const incomeLancamentos = lancamentos.filter(l => l.tipo === 'receita');
+  const expenseLancamentos = lancamentos.filter(l => l.tipo === 'despesa');
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -216,7 +232,7 @@ const Lancamentos = () => {
           <DialogTrigger asChild>
             <Button onClick={() => {
               resetForm();
-              setNaturezaFiltro('despesa');
+              setNaturezaFiltro(activeTab);
             }}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Lançamento
@@ -378,72 +394,130 @@ const Lancamentos = () => {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Histórico de Lançamentos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="text-center py-8">Carregando...</div>
-          ) : lancamentos.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              Nenhum lançamento encontrado
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {lancamentos.map((lancamento) => (
-                <div
-                  key={lancamento.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      {lancamento.tipo === "receita" ? (
-                        <TrendingUp className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 text-red-500" />
-                      )}
-                      <span className="font-medium">{lancamento.descricao}</span>
-                    </div>
-                    <div className="text-sm text-muted-foreground mt-1">
-                      {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
-                      {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <span
-                      className={`text-lg font-semibold ${
-                        lancamento.tipo === "receita" ? "text-green-600" : "text-red-600"
-                      }`}
-                    >
-                      {lancamento.tipo === "receita" ? "+" : "-"} R${" "}
-                      {Number(lancamento.valor).toLocaleString("pt-BR", {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                    <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleEdit(lancamento)}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        onClick={() => handleDelete(lancamento.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+      <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'receita' | 'despesa')} className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="despesa">Despesas</TabsTrigger>
+          <TabsTrigger value="receita">Receitas</TabsTrigger>
+        </TabsList>
+        <TabsContent value="despesa">
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Despesas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">Carregando...</div>
+              ) : expenseLancamentos.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma despesa encontrada
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              ) : (
+                <div className="space-y-2">
+                  {expenseLancamentos.map((lancamento) => (
+                    <div
+                      key={lancamento.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <TrendingDown className="h-4 w-4 text-red-500" />
+                          <span className="font-medium">{lancamento.descricao}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
+                          {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-semibold text-red-600">
+                          - R$ {Number(lancamento.valor).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEdit(lancamento)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDelete(lancamento.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="receita">
+          <Card>
+            <CardHeader>
+              <CardTitle>Histórico de Receitas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-8">Carregando...</div>
+              ) : incomeLancamentos.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhuma receita encontrada
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {incomeLancamentos.map((lancamento) => (
+                    <div
+                      key={lancamento.id}
+                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <TrendingUp className="h-4 w-4 text-green-500" />
+                          <span className="font-medium">{lancamento.descricao}</span>
+                        </div>
+                        <div className="text-sm text-muted-foreground mt-1">
+                          {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
+                          {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <span className="text-lg font-semibold text-green-600">
+                          + R$ {Number(lancamento.valor).toLocaleString("pt-BR", {
+                            minimumFractionDigits: 2,
+                          })}
+                        </span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleEdit(lancamento)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => handleDelete(lancamento.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
