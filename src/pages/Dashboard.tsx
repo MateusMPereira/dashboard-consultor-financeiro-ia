@@ -120,7 +120,7 @@ const Dashboard = () => {
       let ebitda = 0;
       let previousEbitda = 0;
 
-      const expensesByNature: { [key: string]: number } = {};
+      const cmvBySubcategory: { [key: string]: number } = {};
       const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
       const trendServicesDataMap: { [key: string]: { income: number; expenses: number } } = {};
 
@@ -129,15 +129,22 @@ const Dashboard = () => {
         const isCurrentMonth = lancamento.data_referencia >= currentMonthStart && lancamento.data_referencia <= currentMonthEnd;
         const isPreviousMonth = lancamento.data_referencia >= previousMonthStart && lancamento.data_referencia <= previousMonthEnd;
 
+        const isCMV = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CMV') && lancamento.tipo === 'despesa';
+
         if (lancamento.tipo === "receita") {
           if (isCurrentMonth) netIncomes += amount;
           if (isPreviousMonth) previousNetIncomes += amount;
-        } else {
-
+        } else if (isCMV) {
           if (isCurrentMonth) {
-            const categoryName = lancamento.subcategorias?.nome || "Natureza não definida";
-            expensesByNature[categoryName] = (expensesByNature[categoryName] || 0) + amount;
+            totalCMV += amount;
+            const subcategoryName = lancamento.subcategorias?.nome || "CMV Não Categorizado";
+            cmvBySubcategory[subcategoryName] = (cmvBySubcategory[subcategoryName] || 0) + amount;
           }
+          if (isPreviousMonth) {
+            previousTotalCMV += amount;
+          }
+        } else {
+          // Logic for other expenses (Operating, Fixed, Variable) will be handled later
         }
 
         const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
@@ -146,7 +153,7 @@ const Dashboard = () => {
         }
         if (lancamento.tipo === "receita") {
           trendDataMap[monthKey].income += amount;
-        } else if (lancamento.tipo === "cmv") {
+        } else if (isCMV) {
           trendDataMap[monthKey].cmv += amount;
         } else {
           trendDataMap[monthKey].expenses += amount;
@@ -177,9 +184,9 @@ const Dashboard = () => {
         previousEbitda
       });
 
-      setDiscretizedCMVChartData(Object.keys(expensesByNature).map(nature => ({
-        name: nature,
-        value: expensesByNature[nature],
+      setDiscretizedCMVChartData(Object.keys(cmvBySubcategory).map(name => ({
+        name,
+        value: cmvBySubcategory[name],
         color: "#" + Math.floor(Math.random()*16777215).toString(16),
       })));
 
