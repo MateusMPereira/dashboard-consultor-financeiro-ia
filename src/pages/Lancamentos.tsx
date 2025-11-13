@@ -441,7 +441,7 @@ const Lancamentos = () => {
                       {expenseLancamentos.map((lancamento) => (
                         <TableRow key={lancamento.id}>
                           <TableCell className="font-medium">{lancamento.descricao}</TableCell>
-                          <TableCell>{lancamento.subcategorias?.nome || "-"}</TableCell>
+                          <TableCell>{lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "-"}</TableCell>
                           <TableCell className="text-muted-foreground">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
                           <TableCell>{lancamento.fonte || "-"}</TableCell>
                           <TableCell className="text-right font-semibold text-red-600">- R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
@@ -493,7 +493,7 @@ const Lancamentos = () => {
                       {incomeLancamentos.map((lancamento) => (
                         <TableRow key={lancamento.id}>
                           <TableCell className="font-medium">{lancamento.descricao}</TableCell>
-                          <TableCell>{lancamento.subcategorias?.nome || "-"}</TableCell>
+                          <TableCell>{lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "-"}</TableCell>
                           <TableCell className="text-muted-foreground">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
                           <TableCell>{lancamento.fonte || "-"}</TableCell>
                           <TableCell className="text-right font-semibold text-green-600">+ R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>

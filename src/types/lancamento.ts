@@ -16,6 +16,8 @@ export interface Lancamento {
     nome: string
     categoria_id?: string
     categorias: {
+      id?: string
+      descricao: string
       natureza: "receita" | "despesa" | null
     } | null
   } | null
