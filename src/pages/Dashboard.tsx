@@ -13,8 +13,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { Transaction } from "@/components/dashboard/TransactionsList";
 
-// ... (rest of the file)
-
 const Dashboard = () => {
   const { user, empresa, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -266,7 +264,8 @@ const Dashboard = () => {
         .map((lancamento: any) => ({
           id: lancamento.id,
           description: lancamento.descricao,
-          category: lancamento.subcategorias?.nome || "N/A",
+          // Show parent category (categorias.descricao) if available, otherwise fallback to subcategory name
+          category: lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "N/A",
           amount: parseFloat(lancamento.valor),
           date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
           type: (lancamento.tipo === "receita" ? "income" : "expense") as "income" | "expense",
