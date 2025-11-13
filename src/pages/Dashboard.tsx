@@ -208,22 +208,33 @@ const Dashboard = () => {
         previousEbitda: previousNetIncomes - (previousTotalCMV + previousOperatingExpenses)
       });
 
+      const colorPalette = [
+        "hsl(var(--primary))",    // Blue
+        "hsl(var(--success))",    // Green
+        "hsl(var(--destructive))",// Red
+        "#FFA500",                // Orange
+        "#800080",                // Purple
+        "#FFD700",                // Yellow
+        "#000000",                // Black
+        "#808080"                  // Gray
+      ];
+
       setDiscretizedCMVChartData(Object.keys(cmvBySubcategory).map(name => ({
         name,
         value: cmvBySubcategory[name],
-        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
       })));
 
       setFixedExpensesChartData(Object.keys(fixedExpensesBySubcategory).map(name => ({
         name,
         value: fixedExpensesBySubcategory[name],
-        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
       })));
 
       setVariableExpensesChartData(Object.keys(variableExpensesBySubcategory).map(name => ({
         name,
         value: variableExpensesBySubcategory[name],
-        color: "#" + Math.floor(Math.random()*16777215).toString(16),
+        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
       })));
 
       setTrendChartData(Object.keys(trendDataMap).map(month => ({
