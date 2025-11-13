@@ -29,7 +29,7 @@ const Lancamentos = () => {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLancamento, setEditingLancamento] = useState<Lancamento | null>(null);
-  const [tipoFiltro, setTipoFiltro] = useState<TipoLancamento>('despesa');
+  const [naturezaFiltro, setNaturezaFiltro] = useState<'receita' | 'despesa'>('despesa');
 
   const [formData, setFormData] = useState({
     descricao: "",
@@ -138,8 +138,8 @@ const Lancamentos = () => {
 
   const handleEdit = (lancamento: Lancamento) => {
     setEditingLancamento(lancamento);
-    const lancamentoTipo = lancamento.subcategorias?.categorias?.natureza || 'despesa';
-    setTipoFiltro(lancamentoTipo);
+    const lancamentoNatureza = lancamento.subcategorias?.categorias?.natureza || 'despesa';
+    setNaturezaFiltro(lancamentoNatureza);
     setFormData({
       descricao: lancamento.descricao || "",
       valor: lancamento.valor.toString(),
@@ -181,7 +181,7 @@ const Lancamentos = () => {
     .filter((l) => l.tipo === "despesa")
     .reduce((sum, l) => sum + Number(l.valor), 0);
 
-  const filteredSubcategories = subcategories.filter(sub => sub.categorias?.natureza === tipoFiltro);
+  const filteredSubcategories = subcategories.filter(sub => sub.categorias?.natureza === naturezaFiltro);
 
   return (
     <div className="space-y-6">
@@ -197,7 +197,7 @@ const Lancamentos = () => {
           <DialogTrigger asChild>
             <Button onClick={() => {
               resetForm();
-              setTipoFiltro('despesa');
+              setNaturezaFiltro('despesa');
             }}>
               <Plus className="mr-2 h-4 w-4" />
               Novo Lançamento
@@ -213,11 +213,11 @@ const Lancamentos = () => {
               <div className="max-h-[80vh] overflow-y-auto pr-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <Label>Tipo</Label>
+                    <Label>Natureza</Label>
                     <Select
-                      value={tipoFiltro}
+                      value={naturezaFiltro}
                       onValueChange={(value: "receita" | "despesa") => {
-                        setTipoFiltro(value);
+                        setNaturezaFiltro(value);
                         setFormData(prev => ({
                           ...prev,
                           sub_categoria_id: "",
