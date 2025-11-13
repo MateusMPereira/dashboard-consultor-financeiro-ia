@@ -136,33 +136,6 @@ const Dashboard = () => {
         const isFixedCost = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CUSTO FIXO') && lancamento.tipo === 'despesa';
         const isVariableCost = lancamento.subcategorias?.categorias?.descricao?.toUpperCase().includes('CUSTO VARIAVEL') && lancamento.tipo === 'despesa';
 
-        if (lancamento.tipo === "receita") {
-          if (isCurrentMonth) netIncomes += amount;
-          if (isPreviousMonth) previousNetIncomes += amount;
-        } else if (isCMV) {
-          if (isCurrentMonth) {
-            totalCMV += amount;
-            const subcategoryName = lancamento.subcategorias?.nome || "CMV Não Categorizado";
-            cmvBySubcategory[subcategoryName] = (cmvBySubcategory[subcategoryName] || 0) + amount;
-          }
-          if (isPreviousMonth) {
-            previousTotalCMV += amount;
-          }
-        } else if (isFixedCost || isVariableCost) {
-            if (isCurrentMonth) {
-                operatingExpenses += amount;
-                const subcategoryName = lancamento.subcategorias?.nome || "Despesa Não Categorizada";
-                if(isFixedCost) {
-                    fixedExpensesBySubcategory[subcategoryName] = (fixedExpensesBySubcategory[subcategoryName] || 0) + amount;
-                } else {
-                    variableExpensesBySubcategory[subcategoryName] = (variableExpensesBySubcategory[subcategoryName] || 0) + amount;
-                }
-            }
-            if (isPreviousMonth) {
-                previousOperatingExpenses += amount;
-            }
-        }
-
         const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
         if (!trendDataMap[monthKey]) {
           trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
@@ -172,13 +145,38 @@ const Dashboard = () => {
         }
 
         if (lancamento.tipo === "receita") {
+          if (isCurrentMonth) netIncomes += amount;
+          if (isPreviousMonth) previousNetIncomes += amount;
+          
           trendDataMap[monthKey].income += amount;
           trendServicesDataMap[monthKey].income += amount;
-        } else if (isCMV) {
-          trendDataMap[monthKey].cmv += amount;
-          trendServicesDataMap[monthKey].despesasOperacionais += amount;
-        } else {
-          trendDataMap[monthKey].expenses += amount;
+        } else { // Non-revenue
+          if (isCMV) {
+            if (isCurrentMonth) {
+              totalCMV += amount;
+              const subcategoryName = lancamento.subcategorias?.nome || "CMV Não Categorizado";
+              cmvBySubcategory[subcategoryName] = (cmvBySubcategory[subcategoryName] || 0) + amount;
+            }
+            if (isPreviousMonth) {
+              previousTotalCMV += amount;
+            }
+            trendDataMap[monthKey].cmv += amount;
+          } else { // Operating Expense
+            if (isCurrentMonth) {
+              operatingExpenses += amount;
+              const subcategoryName = lancamento.subcategorias?.nome || "Despesa Não Categorizada";
+              if (isFixedCost) {
+                fixedExpensesBySubcategory[subcategoryName] = (fixedExpensesBySubcategory[subcategoryName] || 0) + amount;
+              } else if (isVariableCost) {
+                variableExpensesBySubcategory[subcategoryName] = (variableExpensesBySubcategory[subcategoryName] || 0) + amount;
+              }
+            }
+            if (isPreviousMonth) {
+              previousOperatingExpenses += amount;
+            }
+            trendDataMap[monthKey].expenses += amount;
+          }
+          // All non-revenue expenses are added to trendServicesDataMap
           trendServicesDataMap[monthKey].despesasOperacionais += amount;
         }
       });      
@@ -314,7 +312,7 @@ const Dashboard = () => {
           title="Margem de Contribuição"
           value={formatCurrency(metrics.contributionMargin)}
           change={getChangeValue(metrics.contributionMargin, metrics.previousContributionMargin)}
-          changeType={getChangeType(metrics.contributionMargin, metrics.previousContributionMargin)}
+          changeType={getExpenseChangeType(metrics.contributionMargin, metrics.previousContributionMargin)}
           icon={PieChart}
           variant="destructive"
         />
