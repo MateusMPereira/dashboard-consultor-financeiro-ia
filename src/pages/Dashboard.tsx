@@ -5,6 +5,7 @@ import { TransactionsList } from "@/components/dashboard/TransactionsList";
 import { DiscretizedCMVChart } from "@/components/dashboard/DiscretizedCMVChart";
 import { FixedExpensesChart } from "@/components/dashboard/FixedExpensesChart";
 import { VariableExpensesChart } from "@/components/dashboard/VariableExpensesChart";
+import { MonthYearPicker } from "@/components/dashboard/MonthYearPicker";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { TrendChartServices } from "@/components/dashboard/TrendChartServices";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,40 +13,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { Transaction } from "@/components/dashboard/TransactionsList";
 
-interface DiscretizedCMVData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface FixedExpenseData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface VariableExpenseData {
-  name: string;
-  value: number;
-  color: string;
-}
-
-interface TrendData {
-  month: string;
-  income: number;
-  cmv: number;
-  despesasOperacionais: number;
-}
-
-interface TrendServicesData {
-  month: string;
-  income: number;
-  trendOperatingExpenses: number;
-}
+// ... (rest of the file)
 
 const Dashboard = () => {
   const { user, loading: authLoading } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [metrics, setMetrics] = useState({
     netIncomes: 0,
     previousNetIncomes: 0,
@@ -68,102 +41,74 @@ const Dashboard = () => {
 
   useEffect(() => {
     if (!authLoading && user?.empresa_id) {
-      fetchDashboardData();
+      fetchTrendsAndTransactionsData();
     }
   }, [authLoading, user?.empresa_id]);
 
-  const fetchDashboardData = async () => {
+  useEffect(() => {
+    if (!authLoading && user?.empresa_id) {
+      fetchCardsAndPiesData(selectedDate);
+    }
+  }, [authLoading, user?.empresa_id, selectedDate]);
+
+  const fetchCardsAndPiesData = async (date: Date) => {
     setLoading(true);
     try {
-      if (!user?.empresa_id) {
-        throw new Error("Empresa não encontrada");
-      }
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
 
-      const today = new Date();
-      const currentMonthStart = format(startOfMonth(today), "yyyy-MM-dd");
-      const currentMonthEnd = format(endOfMonth(today), "yyyy-MM-dd");
-      const previousMonthStart = format(startOfMonth(subMonths(today, 1)), "yyyy-MM-dd");
-      const previousMonthEnd = format(endOfMonth(subMonths(today, 1)), "yyyy-MM-dd");
+      const currentMonthStart = format(startOfMonth(date), "yyyy-MM-dd");
+      const currentMonthEnd = format(endOfMonth(date), "yyyy-MM-dd");
+      const previousMonthStart = format(startOfMonth(subMonths(date, 1)), "yyyy-MM-dd");
+      const previousMonthEnd = format(endOfMonth(subMonths(date, 1)), "yyyy-MM-dd");
 
-      const { data: currentMonthLancamentos, error: currentMonthError } = await supabase
-        .from("lancamentos")
-        .select("*, subcategorias(*, categorias(*))")
-        .eq("empresa_id", user.empresa_id)
-        .gte("data_referencia", currentMonthStart)
-        .lte("data_referencia", currentMonthEnd)
-        .order("data_referencia", { ascending: false });
-
-      if (currentMonthError) throw currentMonthError;
-
-      const { data: previousMonthLancamentos, error: previousMonthError } = await supabase
+      const { data: lancamentos, error } = await supabase
         .from("lancamentos")
         .select("*, subcategorias(*, categorias(*))")
         .eq("empresa_id", user.empresa_id)
         .gte("data_referencia", previousMonthStart)
-        .lte("data_referencia", previousMonthEnd);
+        .lte("data_referencia", currentMonthEnd);
 
-      if (previousMonthError) throw previousMonthError;
+      if (error) throw error;
 
-      const allLancamentos = [...(currentMonthLancamentos || []), ...(previousMonthLancamentos || [])].map((item: any) => ({
+      const allLancamentos = (lancamentos || []).map((item: any) => ({
         ...item,
         tipo: item.subcategorias?.categorias?.natureza || 'despesa',
       }));
 
       let netIncomes = 0;
-      let previousNetIncomes = 0
+      let previousNetIncomes = 0;
       let totalCMV = 0;
-      let cmvIncomesSlice = 0;
       let previousTotalCMV = 0;
       let operatingExpenses = 0;
       let previousOperatingExpenses = 0;
-      let contributionMargin = 0;
-      let previousContributionMargin = 0;
-      let ebitda = 0;
-      let previousEbitda = 0;
 
       const cmvBySubcategory: { [key: string]: number } = {};
       const fixedExpensesBySubcategory: { [key: string]: number } = {};
       const variableExpensesBySubcategory: { [key: string]: number } = {};
-      const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
-      const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
+
+      const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
+      const variableCostKeywords = [
+        'DESPESAS VARIAVEIS', 'DESPESAS VARIÁVEIS', 'DESPESA VARIAVEL', 'DESPESA VARIÁVEL',
+        'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
+      ];
+      const cmvKeywords = [
+        'CMV', 'CUSTO DE MERCADORIA VENDIDA', 'CUSTOS DE MERCADORIA VENDIDA',
+        'CUSTO POR MERCADORIA VENDIDA', 'CUSTOS POR MERCADORIA VENDIDA'
+      ];
 
       allLancamentos.forEach((lancamento: any) => {
         const amount = parseFloat(lancamento.valor);
         const isCurrentMonth = lancamento.data_referencia >= currentMonthStart && lancamento.data_referencia <= currentMonthEnd;
         const isPreviousMonth = lancamento.data_referencia >= previousMonthStart && lancamento.data_referencia <= previousMonthEnd;
-
-        const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
-        const variableCostKeywords = [
-          'DESPESAS VARIAVEIS', 'DESPESAS VARIÁVEIS', 'DESPESA VARIAVEL', 'DESPESA VARIÁVEL',
-          'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
-        ];
-
-        const cmvKeywords = [
-          'CMV',
-          'CUSTO DE MERCADORIA VENDIDA',
-          'CUSTOS DE MERCADORIA VENDIDA',
-          'CUSTO POR MERCADORIA VENDIDA',
-          'CUSTOS POR MERCADORIA VENDIDA'
-        ];
+        
         const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
         const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
         const isFixedCost = descriptionUpperCase && fixedCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
         const isVariableCost = descriptionUpperCase && variableCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
 
-        const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
-        if (!trendDataMap[monthKey]) {
-          trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
-        }
-        if (!trendServicesDataMap[monthKey]) {
-          trendServicesDataMap[monthKey] = { income: 0, trendOperatingExpenses: 0 };
-        }
-
         if (lancamento.tipo === "receita") {
           if (isCurrentMonth) netIncomes += amount;
           if (isPreviousMonth) previousNetIncomes += amount;
-          
-          trendDataMap[monthKey].income += amount;
-          trendServicesDataMap[monthKey].income += amount;
         } else { // Non-revenue
           if (isCMV) {
             if (isCurrentMonth) {
@@ -171,11 +116,8 @@ const Dashboard = () => {
               const subcategoryName = lancamento.subcategorias?.nome || "CMV Não Categorizado";
               cmvBySubcategory[subcategoryName] = (cmvBySubcategory[subcategoryName] || 0) + amount;
             }
-            if (isPreviousMonth) {
-              previousTotalCMV += amount;
-            }
-            trendDataMap[monthKey].cmv += amount;
-          } else { // Operating Expense (non-CMV, non-revenue)
+            if (isPreviousMonth) previousTotalCMV += amount;
+          } else { // Operating Expense
             if (isCurrentMonth) {
               operatingExpenses += amount;
               const subcategoryName = lancamento.subcategorias?.nome || "Despesa Não Categorizada";
@@ -185,14 +127,10 @@ const Dashboard = () => {
                 variableExpensesBySubcategory[subcategoryName] = (variableExpensesBySubcategory[subcategoryName] || 0) + amount;
               }
             }
-            if (isPreviousMonth) {
-              previousOperatingExpenses += amount;
-            }
-            trendDataMap[monthKey].expenses += amount;
-            trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
+            if (isPreviousMonth) previousOperatingExpenses += amount;
           }
         }
-      });      
+      });
 
       setMetrics({
         netIncomes,
@@ -209,33 +147,88 @@ const Dashboard = () => {
       });
 
       const colorPalette = [
-        "hsl(var(--primary))",    // Blue
-        "hsl(var(--success))",    // Green
-        "hsl(var(--destructive))",// Red
-        "#FFA500",                // Orange
-        "#800080",                // Purple
-        "#FFD700",                // Yellow
-        "#000000",                // Black
-        "#808080"                  // Gray
+        "hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--destructive))",
+        "#FFA500", "#800080", "#FFD700", "#000000", "#808080"
       ];
 
       setDiscretizedCMVChartData(Object.keys(cmvBySubcategory).map(name => ({
-        name,
-        value: cmvBySubcategory[name],
-        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+        name, value: cmvBySubcategory[name], color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
       })));
-
       setFixedExpensesChartData(Object.keys(fixedExpensesBySubcategory).map(name => ({
-        name,
-        value: fixedExpensesBySubcategory[name],
-        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+        name, value: fixedExpensesBySubcategory[name], color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+      })));
+      setVariableExpensesChartData(Object.keys(variableExpensesBySubcategory).map(name => ({
+        name, value: variableExpensesBySubcategory[name], color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
       })));
 
-      setVariableExpensesChartData(Object.keys(variableExpensesBySubcategory).map(name => ({
-        name,
-        value: variableExpensesBySubcategory[name],
-        color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
-      })));
+    } catch (error: any) {
+      console.error("Error fetching card and pie data:", error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchTrendsAndTransactionsData = async () => {
+    try {
+      if (!user?.empresa_id) throw new Error("Empresa não encontrada");
+
+      const today = new Date();
+      const sixMonthsAgo = startOfMonth(subMonths(today, 5)); // 5 months ago to include current month
+      const currentMonthEnd = endOfMonth(today);
+
+      const { data: lancamentos, error } = await supabase
+        .from("lancamentos")
+        .select("*, subcategorias(*, categorias(*))")
+        .eq("empresa_id", user.empresa_id)
+        .gte("data_referencia", format(sixMonthsAgo, "yyyy-MM-dd"))
+        .lte("data_referencia", format(currentMonthEnd, "yyyy-MM-dd"));
+
+      if (error) throw error;
+
+      const allLancamentos = (lancamentos || []).map((item: any) => ({
+        ...item,
+        tipo: item.subcategorias?.categorias?.natureza || 'despesa',
+      }));
+
+      const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
+      const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
+      
+      const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
+      const variableCostKeywords = [
+        'DESPESAS VARIAVEIS', 'DESPESAS VARIÁVEIS', 'DESPESA VARIAVEL', 'DESPESA VARIÁVEL',
+        'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
+      ];
+      const cmvKeywords = [
+        'CMV', 'CUSTO DE MERCADORIA VENDIDA', 'CUSTOS DE MERCADORIA VENDIDA',
+        'CUSTO POR MERCADORIA VENDIDA', 'CUSTOS POR MERCADORIA VENDIDA'
+      ];
+
+      allLancamentos.forEach((lancamento: any) => {
+        const amount = parseFloat(lancamento.valor);
+        const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
+        
+        if (!trendDataMap[monthKey]) {
+          trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
+        }
+        if (!trendServicesDataMap[monthKey]) {
+          trendServicesDataMap[monthKey] = { income: 0, trendOperatingExpenses: 0 };
+        }
+
+        const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
+        const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
+
+        if (lancamento.tipo === "receita") {
+          trendDataMap[monthKey].income += amount;
+          trendServicesDataMap[monthKey].income += amount;
+        } else { // Non-revenue
+          if (isCMV) {
+            trendDataMap[monthKey].cmv += amount;
+          } else { // Operating Expense
+            trendDataMap[monthKey].expenses += amount;
+            trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
+          }
+        }
+      });
 
       setTrendChartData(Object.keys(trendDataMap).map(month => ({
         month,
@@ -250,12 +243,9 @@ const Dashboard = () => {
         trendOperatingExpenses: trendServicesDataMap[month].trendOperatingExpenses,
       })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
 
+      const currentMonthStartForTransactions = format(startOfMonth(today), "yyyy-MM-dd");
       setTransactions(allLancamentos
-        .filter((lancamento: any) => {
-            const today = new Date();
-            const currentMonthStart = format(startOfMonth(today), "yyyy-MM-dd");
-            return lancamento.data_referencia >= currentMonthStart;
-        })
+        .filter((lancamento: any) => lancamento.data_referencia >= currentMonthStartForTransactions)
         .map((lancamento: any) => ({
           id: lancamento.id,
           description: lancamento.descricao,
@@ -268,9 +258,7 @@ const Dashboard = () => {
       );
 
     } catch (error: any) {
-      console.error("Error fetching dashboard data:", error.message);
-    } finally {
-      setLoading(false);
+      console.error("Error fetching trend and transaction data:", error.message);
     }
   };
 
@@ -306,6 +294,9 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-8">
+      <div className="flex justify-end">
+        <MonthYearPicker date={selectedDate} setDate={setSelectedDate} />
+      </div>
       {/* Metrics Grid */}
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
         <MetricCard
