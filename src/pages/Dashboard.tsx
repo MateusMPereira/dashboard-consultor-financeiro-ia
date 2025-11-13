@@ -161,7 +161,7 @@ const Dashboard = () => {
               previousTotalCMV += amount;
             }
             trendDataMap[monthKey].cmv += amount;
-          } else { // Operating Expense
+          } else { // Operating Expense (non-CMV, non-revenue)
             if (isCurrentMonth) {
               operatingExpenses += amount;
               const subcategoryName = lancamento.subcategorias?.nome || "Despesa Não Categorizada";
@@ -175,9 +175,8 @@ const Dashboard = () => {
               previousOperatingExpenses += amount;
             }
             trendDataMap[monthKey].expenses += amount;
+            trendServicesDataMap[monthKey].despesasOperacionais += amount;
           }
-          // All non-revenue expenses are added to trendServicesDataMap
-          trendServicesDataMap[monthKey].despesasOperacionais += amount;
         }
       });      
 
@@ -296,7 +295,7 @@ const Dashboard = () => {
           title="CMV Total"
           value={formatCurrency(metrics.totalCMV)}
           change={getChangeValue(metrics.totalCMV, metrics.previousTotalCMV)}
-          changeType={getChangeType(metrics.totalCMV, metrics.previousTotalCMV)}
+          changeType={getExpenseChangeType(metrics.totalCMV, metrics.previousTotalCMV)}
           icon={ShoppingCart}
           variant="destructive"
         />
