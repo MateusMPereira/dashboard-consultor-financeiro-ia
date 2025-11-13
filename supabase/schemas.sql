@@ -5,15 +5,22 @@
 -- 1. EMPRESAS
 DROP TABLE IF EXISTS public.empresas CASCADE;
 CREATE TABLE public.empresas (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  nome character varying NOT NULL,
-  cnpj character varying UNIQUE,
-  telefone character varying,
-  email character varying,
-  ativo boolean DEFAULT true,
-  created_at timestamp without time zone DEFAULT now(),
-  updated_at timestamp without time zone,
-  CONSTRAINT empresas_pkey PRIMARY KEY (id)
+  id uuid not null default gen_random_uuid (),
+  nome character varying not null,
+  cnpj character varying null,
+  telefone character varying null,
+  email character varying null,
+  ativo boolean null default true,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null,
+  atividade text not null default 'varejo'::text,
+  constraint empresas_pkey primary key (id),
+  constraint empresas_cnpj_key unique (cnpj),
+  constraint empresas_atividade_check check (
+    (
+      atividade = any (array['varejo'::text, 'servico'::text])
+    )
+  )
 );
 
 -- 2. CATEGORIAS
