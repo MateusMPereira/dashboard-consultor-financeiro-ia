@@ -309,13 +309,16 @@ const Dashboard = () => {
     );
   }
 
+  const atividade = (empresa as any)?.atividade;
+  const gridColsClass = atividade === 'varejo' ? 'lg:grid-cols-5' : 'lg:grid-cols-4';
+
   return (
     <div className="space-y-8">
       <div className="flex justify-end">
         <MonthYearPicker date={selectedDate} setDate={setSelectedDate} />
       </div>
       {/* Metrics Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+      <div className={`grid gap-6 md:grid-cols-2 ${gridColsClass}`}>
         <MetricCard
           title="Receita Líquida"
           value={formatCurrency(metrics.netIncomes)}
@@ -324,14 +327,18 @@ const Dashboard = () => {
           icon={DollarSign}
           variant="default"
         />
-        <MetricCard
-          title="CMV Total"
-          value={formatCurrency(metrics.totalCMV)}
-          change={getChangeValue(metrics.totalCMV, metrics.previousTotalCMV)}
-          changeType={getExpenseChangeType(metrics.totalCMV, metrics.previousTotalCMV)}
-          icon={ShoppingCart}
-          variant="destructive"
-        />
+
+        {atividade === 'varejo' && (
+          <MetricCard
+            title="CMV Total"
+            value={formatCurrency(metrics.totalCMV)}
+            change={getChangeValue(metrics.totalCMV, metrics.previousTotalCMV)}
+            changeType={getExpenseChangeType(metrics.totalCMV, metrics.previousTotalCMV)}
+            icon={ShoppingCart}
+            variant="destructive"
+          />
+        )}
+
         <MetricCard
           title="Despesas Operacionais"
           value={formatCurrency(metrics.operatingExpenses)}
