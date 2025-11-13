@@ -2,6 +2,14 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -417,49 +425,41 @@ const Lancamentos = () => {
                   Nenhuma despesa encontrada
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {expenseLancamentos.map((lancamento) => (
-                    <div
-                      key={lancamento.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <TrendingDown className="h-4 w-4 text-red-500" />
-                          <span className="font-medium">{lancamento.descricao}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
-                          {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
-                          {lancamento.fonte && ` • ${lancamento.fonte}`}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-semibold text-red-600">
-                          - R$ {Number(lancamento.valor).toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEdit(lancamento)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDelete(lancamento.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Fonte</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {expenseLancamentos.map((lancamento) => (
+                        <TableRow key={lancamento.id}>
+                          <TableCell className="font-medium">{lancamento.descricao}</TableCell>
+                          <TableCell>{lancamento.subcategorias?.nome || "-"}</TableCell>
+                          <TableCell className="text-muted-foreground">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
+                          <TableCell>{lancamento.fonte || "-"}</TableCell>
+                          <TableCell className="text-right font-semibold text-red-600">- R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button variant="outline" size="icon" onClick={() => handleEdit(lancamento)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="icon" onClick={() => handleDelete(lancamento.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
               )}
             </CardContent>
           </Card>
@@ -477,49 +477,41 @@ const Lancamentos = () => {
                   Nenhuma receita encontrada
                 </div>
               ) : (
-                <div className="space-y-2">
-                  {incomeLancamentos.map((lancamento) => (
-                    <div
-                      key={lancamento.id}
-                      className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <TrendingUp className="h-4 w-4 text-green-500" />
-                          <span className="font-medium">{lancamento.descricao}</span>
-                        </div>
-                        <div className="text-sm text-muted-foreground mt-1">
-                          {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
-                          {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
-                          {lancamento.fonte && ` • ${lancamento.fonte}`}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-lg font-semibold text-green-600">
-                          + R$ {Number(lancamento.valor).toLocaleString("pt-BR", {
-                            minimumFractionDigits: 2,
-                          })}
-                        </span>
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleEdit(lancamento)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleDelete(lancamento.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Descrição</TableHead>
+                        <TableHead>Categoria</TableHead>
+                        <TableHead>Data</TableHead>
+                        <TableHead>Fonte</TableHead>
+                        <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {incomeLancamentos.map((lancamento) => (
+                        <TableRow key={lancamento.id}>
+                          <TableCell className="font-medium">{lancamento.descricao}</TableCell>
+                          <TableCell>{lancamento.subcategorias?.nome || "-"}</TableCell>
+                          <TableCell className="text-muted-foreground">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
+                          <TableCell>{lancamento.fonte || "-"}</TableCell>
+                          <TableCell className="text-right font-semibold text-green-600">+ R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex gap-2 justify-end">
+                              <Button variant="outline" size="icon" onClick={() => handleEdit(lancamento)}>
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button variant="outline" size="icon" onClick={() => handleDelete(lancamento.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
               )}
             </CardContent>
           </Card>
