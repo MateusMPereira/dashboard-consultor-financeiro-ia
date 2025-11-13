@@ -120,17 +120,29 @@ CREATE TABLE public.insights (
 -- 8. LANCAMENTOS
 DROP TABLE IF EXISTS public.lancamentos CASCADE;
 CREATE TABLE public.lancamentos (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  empresa_id uuid NOT NULL,
-  sub_categoria_id uuid,
-  descricao text,
-  valor numeric NOT NULL,
-  data_referencia date NOT NULL,
-  created_at timestamp without time zone DEFAULT now(),
-  updated_at timestamp without time zone,
-  CONSTRAINT lancamentos_pkey PRIMARY KEY (id),
-  CONSTRAINT lancamentos_empresa_id_fkey FOREIGN KEY (empresa_id) REFERENCES public.empresas(id),
-  CONSTRAINT lancamentos_sub_categoria_id_fkey FOREIGN KEY (sub_categoria_id) REFERENCES public.subcategorias(id)
+  id uuid not null default gen_random_uuid (),
+  empresa_id uuid not null,
+  sub_categoria_id uuid null,
+  descricao text null,
+  valor numeric not null,
+  data_referencia date not null,
+  created_at timestamp without time zone null default now(),
+  updated_at timestamp without time zone null,
+  fonte text null default 'Whatsapp'::text,
+  constraint lancamentos_pkey primary key (id),
+  constraint lancamentos_empresa_id_fkey foreign KEY (empresa_id) references empresas (id),
+  constraint lancamentos_sub_categoria_id_fkey foreign KEY (sub_categoria_id) references subcategorias (id),
+  constraint lancamentos_fonte_check check (
+    (
+      fonte = any (
+        array[
+          'Whatsapp'::text,
+          'Dashboard'::text,
+          'Integração'::text
+        ]
+      )
+    )
+  )
 );
 
 -- 9. ARQUIVOS

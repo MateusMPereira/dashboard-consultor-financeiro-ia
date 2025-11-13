@@ -10,6 +10,7 @@ export interface Lancamento {
   data_referencia: string
   created_at: string
   updated_at: string | null
+  fonte?: string
   subcategorias?: {
     id?: string
     nome: string

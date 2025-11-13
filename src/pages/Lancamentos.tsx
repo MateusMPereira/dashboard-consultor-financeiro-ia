@@ -431,6 +431,7 @@ const Lancamentos = () => {
                         <div className="text-sm text-muted-foreground mt-1">
                           {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
                           {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
+                          {lancamento.fonte && ` • ${lancamento.fonte}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
@@ -490,6 +491,7 @@ const Lancamentos = () => {
                         <div className="text-sm text-muted-foreground mt-1">
                           {format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}
                           {lancamento.subcategorias && ` • ${lancamento.subcategorias.nome}`}
+                          {lancamento.fonte && ` • ${lancamento.fonte}`}
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
