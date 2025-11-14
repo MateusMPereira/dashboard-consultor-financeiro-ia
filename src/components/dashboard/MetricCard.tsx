@@ -7,6 +7,7 @@ interface MetricCardProps {
   value: string;
   change?: string;
   changeType?: "positive" | "negative" | "neutral";
+  overIncome: string;
   icon: LucideIcon;
   variant?: "default" | "success" | "destructive";
 }
@@ -16,6 +17,7 @@ export function MetricCard({
   value,
   change,
   changeType = "neutral",
+  overIncome,
   icon: Icon,
   variant = "default",
 }: MetricCardProps) {
@@ -25,6 +27,13 @@ export function MetricCard({
         <div className="space-y-2 mt-auto">
           <p className="text-xs font-medium text-muted-foreground">{title}</p>
           <p className="text-2xl font-bold tracking-tight">{value}</p>
+          {overIncome && (
+            <p
+              className="text-sm font-medium text-muted-foreground"
+            >
+              {overIncome}
+            </p>
+          )}
           {change && (
             <p
               className={cn(
