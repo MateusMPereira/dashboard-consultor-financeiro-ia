@@ -80,6 +80,10 @@ const Dashboard = () => {
       let previousTotalCMV = 0;
       let operatingExpenses = 0;
       let previousOperatingExpenses = 0;
+      let variableCosts = 0;
+      let previousVariableCosts = 0;
+      let taxes = 0;
+      let previousTaxes = 0;
 
       const cmvBySubcategory: { [key: string]: number } = {};
       const fixedExpensesBySubcategory: { [key: string]: number } = {};
@@ -94,6 +98,7 @@ const Dashboard = () => {
         'CMV', 'CUSTO DE MERCADORIA VENDIDA', 'CUSTOS DE MERCADORIA VENDIDA',
         'CUSTO POR MERCADORIA VENDIDA', 'CUSTOS POR MERCADORIA VENDIDA'
       ];
+      const taxKeywords = ['IMPOSTO', 'IMPOSTOS'];
 
       allLancamentos.forEach((lancamento: any) => {
         const amount = parseFloat(lancamento.valor);
@@ -104,12 +109,16 @@ const Dashboard = () => {
         const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
         const isFixedCost = descriptionUpperCase && fixedCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
         const isVariableCost = descriptionUpperCase && variableCostKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
+        const isTax = descriptionUpperCase && taxKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
 
         if (lancamento.tipo === "receita") {
           if (isCurrentMonth) netIncomes += amount;
           if (isPreviousMonth) previousNetIncomes += amount;
         } else { // Non-revenue
-          if (isCMV) {
+          if (isTax) {
+            if (isCurrentMonth) taxes += amount;
+            if (isPreviousMonth) previousTaxes += amount;
+          } else if (isCMV) {
             if (isCurrentMonth) {
               totalCMV += amount;
               const subcategoryName = lancamento.subcategorias?.nome || "CMV Não Categorizado";
@@ -124,9 +133,11 @@ const Dashboard = () => {
                 fixedExpensesBySubcategory[subcategoryName] = (fixedExpensesBySubcategory[subcategoryName] || 0) + amount;
               } else if (isVariableCost) {
                 variableExpensesBySubcategory[subcategoryName] = (variableExpensesBySubcategory[subcategoryName] || 0) + amount;
+                variableCosts += amount;
               }
             }
             if (isPreviousMonth) previousOperatingExpenses += amount;
+            if (isPreviousMonth && isVariableCost) previousVariableCosts += amount;
           }
         }
       });
@@ -139,8 +150,8 @@ const Dashboard = () => {
         previousTotalCMV,
         operatingExpenses,
         previousOperatingExpenses,
-        contributionMargin: totalCMV + operatingExpenses,
-        previousContributionMargin: previousTotalCMV + previousOperatingExpenses,
+        contributionMargin: netIncomes - (variableCosts + taxes),
+        previousContributionMargin: previousNetIncomes - (previousVariableCosts + previousTaxes),
         ebitda: netIncomes - (totalCMV + operatingExpenses),
         previousEbitda: previousNetIncomes - (previousTotalCMV + previousOperatingExpenses)
       });
