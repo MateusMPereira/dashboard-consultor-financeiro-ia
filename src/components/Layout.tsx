@@ -15,7 +15,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
       toast.error("Erro ao sair");
     } else {
       toast.success("Logout realizado com sucesso");
-      navigate("/auth");
+      // Usa window.location para garantir que funciona na VPS com hash routing
+      window.location.href = "/#/auth";
     }
   };
 
