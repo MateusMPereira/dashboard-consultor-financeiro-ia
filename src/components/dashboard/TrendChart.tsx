@@ -11,6 +11,10 @@ interface TrendChartProps {
   data: TrendData[];
 }
 
+const formatCurrency = (value: number) => {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
 export function TrendChart({ data }: TrendChartProps) {
   return (
     <Card className="p-6 shadow-card">
@@ -22,7 +26,7 @@ export function TrendChart({ data }: TrendChartProps) {
           <XAxis dataKey="month" className="text-muted-foreground" />
           <YAxis className="text-muted-foreground" />
           <Tooltip
-            formatter={(value) => `R$ ${Number(value).toFixed(2)}`}
+            formatter={(value: any) => [formatCurrency(value)]}
             contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }}
           />
           <Legend />

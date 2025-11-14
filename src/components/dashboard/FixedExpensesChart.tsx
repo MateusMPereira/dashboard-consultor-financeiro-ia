@@ -11,6 +11,10 @@ interface FixedExpensesChartProps {
   data: ChartData[];
 }
 
+const formatCurrency = (value: number) => {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
 export function FixedExpensesChart({ data }: FixedExpensesChartProps) {
   return (
     <Card className="p-6 shadow-card">
@@ -22,7 +26,7 @@ export function FixedExpensesChart({ data }: FixedExpensesChartProps) {
             cx="50%"
             cy="50%"
             labelLine={false}
-            label={({ value }) => `R$ ${Number(value).toFixed(2)}`}
+            label={({ value }) => `${formatCurrency(value)}`}
             outerRadius={80}
             fill="#8884d8"
             dataKey="value"
@@ -31,7 +35,7 @@ export function FixedExpensesChart({ data }: FixedExpensesChartProps) {
               <Cell key={`cell-${index}`} fill={entry.color} />
             ))}
           </Pie>
-          <Tooltip formatter={(value, name) => [`R$ ${Number(value).toFixed(2)}`, name]} />
+          <Tooltip formatter={(value: any, name) => [formatCurrency(value), name]} />
           <Legend />
         </PieChart>
       </ResponsiveContainer>

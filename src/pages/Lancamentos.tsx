@@ -49,6 +49,33 @@ interface Subcategory {
   } | null;
 }
 
+// Função para formatar valor como moeda
+const formatCurrency = (value: number) => {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
+// Função para remover formatação de moeda
+const unformatCurrency = (value: string): number => {
+  if (!value) return 0;
+  // Remove tudo que não é número
+  const numericOnly = value.replace(/\D/g, "");
+  // Converte para número (considera os últimos 2 dígitos como centavos)
+  return parseInt(numericOnly, 10) / 100 || 0;
+};
+
+// Função para formatar input enquanto digita
+const handleCurrencyInput = (value: string): string => {
+  // Remove tudo que não é número
+  const numericOnly = value.replace(/\D/g, "");
+  
+  // Se não houver nada, retorna vazio
+  if (!numericOnly) return "";
+  
+  // Converte para número e formata como moeda
+  const numValue = parseInt(numericOnly, 10) / 100;
+  return formatCurrency(numValue);
+};
+
 const Lancamentos = () => {
   const { user, loading: authLoading } = useAuth();
   const [lancamentos, setLancamentos] = useState<Lancamento[]>([]);
@@ -142,11 +169,19 @@ const Lancamentos = () => {
         return;
       }
 
+      // Converte o valor formatado para número sem formatação
+      const valorNumerico = unformatCurrency(formData.valor);
+
+      if (valorNumerico <= 0) {
+        toast.error("Por favor, insira um valor maior que zero.");
+        return;
+      }
+
       const lancamentoData = {
         descricao: formData.descricao,
-        valor: parseFloat(formData.valor),
+        valor: valorNumerico,
         data_referencia: formData.data_referencia,
-        sub_categoria_id: formData.sub_categoria_id, // No longer optional
+        sub_categoria_id: formData.sub_categoria_id,
         empresa_id: user.empresa_id,
       };
 
@@ -179,7 +214,7 @@ const Lancamentos = () => {
     setNaturezaFiltro(lancamentoNatureza);
     setFormData({
       descricao: lancamento.descricao || "",
-      valor: lancamento.valor.toString(),
+      valor: formatCurrency(Number(lancamento.valor)),
       data_referencia: lancamento.data_referencia,
       categoria_id: lancamento.subcategorias?.categoria_id || "",
       sub_categoria_id: lancamento.sub_categoria_id || "",
@@ -339,10 +374,10 @@ const Lancamentos = () => {
                   <div>
                     <Label>Valor (R$)</Label>
                     <Input
-                      type="number"
-                      step="0.01"
+                      type="text"
+                      placeholder="0,00"
                       value={formData.valor}
-                      onChange={(e) => setFormData({ ...formData, valor: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, valor: handleCurrencyInput(e.target.value) })}
                       required
                     />
                   </div>

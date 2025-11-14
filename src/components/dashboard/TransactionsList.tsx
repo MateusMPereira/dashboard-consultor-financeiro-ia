@@ -23,6 +23,10 @@ interface TransactionsListProps {
   transactions: Transaction[];
 }
 
+const formatCurrency = (value: number) => {
+  return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+};
+
 export function TransactionsList({ transactions }: TransactionsListProps) {
   return (
     <Card className="p-6 shadow-card">
@@ -50,7 +54,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                   transaction.type === "income" ? "text-success" : "text-destructive"
                 )}
               >
-                {transaction.type === "income" ? "+" : "-"} R$ {Math.abs(transaction.amount).toFixed(2)}
+                {transaction.type === "income" ? "+" : "-"} {formatCurrency(transaction.amount)}
               </TableCell>
             </TableRow>
           ))}
