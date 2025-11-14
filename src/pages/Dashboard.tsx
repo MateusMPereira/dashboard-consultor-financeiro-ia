@@ -173,15 +173,14 @@ const Dashboard = () => {
       if (!empresaId) throw new Error("Empresa não encontrada");
 
       const today = new Date();
-      const sixMonthsAgo = startOfMonth(subMonths(today, 5)); // 5 months ago to include current month
-      const currentMonthEnd = endOfMonth(today);
 
       const { data: lancamentos, error } = await supabase
         .from("lancamentos")
         .select("*, subcategorias(*, categorias(*))")
         .eq("empresa_id", empresaId)
-        .gte("data_referencia", format(sixMonthsAgo, "yyyy-MM-dd"))
-        .lte("data_referencia", format(currentMonthEnd, "yyyy-MM-dd"));
+        .gte("data_referencia", format(startOfMonth(today), "yyyy-MM-dd"))
+        .lte("data_referencia", format(endOfMonth(today), "yyyy-MM-dd"))
+        .order("data_referencia", { ascending: false });
 
       if (error) throw error;
 
