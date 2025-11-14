@@ -15,7 +15,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       toast.error("Erro ao sair");
     } else {
       toast.success("Logout realizado com sucesso");
-      navigate("/#/auth");
+      navigate("/auth");
     }
   };
 
