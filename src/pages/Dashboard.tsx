@@ -263,7 +263,6 @@ const Dashboard = () => {
         .map((lancamento: any) => ({
           id: lancamento.id,
           description: lancamento.descricao,
-          // Show parent category (categorias.descricao) if available, otherwise fallback to subcategory name
           category: lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "N/A",
           amount: parseFloat(lancamento.valor),
           date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
@@ -301,6 +300,13 @@ const Dashboard = () => {
     return `${diff <= 0 ? "" : diffSign}${formatCurrency(diff)} (${diff <= 0 ? "" : diffSign}${diff === 0 ? 0 : percentage.toFixed(2)}%)`;
   };
 
+  const getOverIncome = (income: number, value: number) => {
+    if (income === 0) return "";
+
+    const percentage = income === 0 ? 0 : (value / income) * 100;
+    return `${percentage.toFixed(2)}% da Receita`;
+  }
+
   if (authLoading || loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -324,6 +330,7 @@ const Dashboard = () => {
           value={formatCurrency(metrics.netIncomes)}
           change={getChangeValue(metrics.netIncomes, metrics.previousNetIncomes)}
           changeType={getChangeType(metrics.netIncomes, metrics.previousNetIncomes)}
+          overIncome={""}
           icon={DollarSign}
           variant="default"
         />
@@ -334,6 +341,7 @@ const Dashboard = () => {
             value={formatCurrency(metrics.totalCMV)}
             change={getChangeValue(metrics.totalCMV, metrics.previousTotalCMV)}
             changeType={getExpenseChangeType(metrics.totalCMV, metrics.previousTotalCMV)}
+            overIncome={getOverIncome(metrics.netIncomes, metrics.totalCMV)}
             icon={ShoppingCart}
             variant="destructive"
           />
@@ -344,6 +352,7 @@ const Dashboard = () => {
           value={formatCurrency(metrics.operatingExpenses)}
           change={getChangeValue(metrics.operatingExpenses, metrics.previousOperatingExpenses)}
           changeType={getExpenseChangeType(metrics.operatingExpenses, metrics.previousOperatingExpenses)}
+          overIncome={getOverIncome(metrics.netIncomes, metrics.operatingExpenses)}
           icon={Calculator}
           variant="destructive"
         />
@@ -352,6 +361,7 @@ const Dashboard = () => {
           value={formatCurrency(metrics.contributionMargin)}
           change={getChangeValue(metrics.contributionMargin, metrics.previousContributionMargin)}
           changeType={getExpenseChangeType(metrics.contributionMargin, metrics.previousContributionMargin)}
+          overIncome={getOverIncome(metrics.netIncomes, metrics.contributionMargin)}
           icon={PieChart}
           variant="destructive"
         />
@@ -360,6 +370,7 @@ const Dashboard = () => {
           value={formatCurrency(metrics.ebitda)}
           change={getChangeValue(metrics.ebitda, metrics.previousEbitda)}
           changeType={getChangeType(metrics.ebitda, metrics.previousEbitda)}
+          overIncome={getOverIncome(metrics.netIncomes, metrics.ebitda)}
           icon={Target}
           variant="success"
         />
