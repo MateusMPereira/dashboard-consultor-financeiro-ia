@@ -297,11 +297,9 @@ const Dashboard = () => {
   const getChangeValue = (current: number, previous: number) => {
     const diff = current - previous;
     const percentage = previous === 0 ? 100 : (diff / previous) * 100;
-    let diffSign = "";
-    if (diff > 0) {
-      diffSign = "+";
-    }
-    return `${diff < 0 ? "" : diffSign}${formatCurrency(diff)} (${diff < 0 ? "" : diffSign}${diff === 0 ? 0 : percentage.toFixed(2)}%)`;
+    const diffSign = "+";
+
+    return `${diff <= 0 ? "" : diffSign}${formatCurrency(diff)} (${diff <= 0 ? "" : diffSign}${diff === 0 ? 0 : percentage.toFixed(2)}%)`;
   };
 
   if (authLoading || loading) {
