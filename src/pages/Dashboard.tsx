@@ -214,6 +214,7 @@ const Dashboard = () => {
         'CMV', 'CUSTO DE MERCADORIA VENDIDA', 'CUSTOS DE MERCADORIA VENDIDA',
         'CUSTO POR MERCADORIA VENDIDA', 'CUSTOS POR MERCADORIA VENDIDA'
       ];
+      const taxKeywords = ['IMPOSTO', 'IMPOSTOS'];
 
       allLancamentos.forEach((lancamento: any) => {
         const amount = parseFloat(lancamento.valor);
@@ -228,6 +229,7 @@ const Dashboard = () => {
 
         const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
         const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
+        const isTax = descriptionUpperCase && taxKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
 
         if (lancamento.tipo === "receita") {
           if (atividade === 'varejo') {
@@ -239,7 +241,7 @@ const Dashboard = () => {
         } else { // Non-revenue
           if (isCMV) {
             if (atividade === 'varejo') trendDataMap[monthKey].cmv += amount;
-          } else { // Operating Expense
+          } else if (!isTax) { // Operating Expense (excluding taxes)
             if (atividade === 'varejo') trendDataMap[monthKey].expenses += amount;
             if (atividade === 'servico') trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
           }
