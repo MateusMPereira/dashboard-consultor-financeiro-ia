@@ -1,5 +1,4 @@
-# Etapa 1 - Build
-# Etapa 1 - Build
+# Etapa 1 - Build do Frontend
 FROM node:18-alpine AS builder
 WORKDIR /app
 
@@ -9,56 +8,69 @@ RUN npm ci --silent || npm install --silent
 COPY . .
 RUN npm run build
 
-# Etapa 2 - imagem final única (nginx + node server + chromium)
+# Etapa 2 - Imagem final com Node.js Server + Chromium
 FROM node:18-bullseye-slim
 WORKDIR /app
 
-# Do not let Puppeteer download Chromium (we'll use system package)
+# Não deixar o Puppeteer baixar o Chromium
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 
-# Install nginx, chromium and required libs
+# Instalar Chromium e dependências
 RUN apt-get update && apt-get install -y --no-install-recommends \
-	nginx \
 	chromium \
 	ca-certificates \
 	fonts-liberation \
-	wget \
-	gnupg \
-	libx11-6 \
-	libx11-xcb1 \
-	libxcomposite1 \
-	libxrandr2 \
-	libxss1 \
 	libasound2 \
-	libatk1.0-0 \
 	libatk-bridge2.0-0 \
+	libatk1.0-0 \
+	cairo2 \
 	libcups2 \
+	libdbus-1-3 \
+	libexpat1 \
+	libfontconfig1 \
+	libgbm1 \
+	libgcc1 \
+	libglib2.0-0 \
 	libgtk-3-0 \
 	libnspr4 \
 	libnss3 \
+	libpango-1.0-0 \
+	libpangocairo-1.0-0 \
+	libstdc++6 \
+	libx11-6 \
+	libx11-xcb1 \
+	libxcb1 \
+	libxcomposite1 \
+	libxcursor1 \
+	libxdamage1 \
+	libxext6 \
+	libxfixes3 \
+	libxi6 \
+	libxrandr2 \
+	libxrender1 \
+	libxss1 \
+	libxtst6 \
 	lsb-release \
+	wget \
+	xdg-utils \
 	&& rm -rf /var/lib/apt/lists/*
 
-# Copy frontend build into nginx web root
-COPY --from=builder /app/dist /var/www/html
-
-# Copy package.json and install server dependencies
+# Copiar dependências do projeto
 COPY package*.json ./
+# Instalar somente dependências de produção
 RUN npm ci --production --silent
 
-# Copy server code
+# Copiar o código do servidor
 COPY server ./server
 
-# Copy nginx config
-COPY server/nginx.conf /etc/nginx/conf.d/default.conf
+# Copiar o build do frontend da etapa de build
+COPY --from=builder /app/dist ./dist
 
-# Copy start script and make executable
-COPY server/start.sh /app/start.sh
-RUN chmod +x /app/start.sh
+# Expor a porta que o servidor Node.js vai usar
+EXPOSE 3000
 
-# Expose both ports
-EXPOSE 80 3000
-
+# Definir o caminho do executável do Chromium
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-CMD ["/app/start.sh"]
+# Comando para iniciar o servidor
+CMD ["node", "server/index.js"]
