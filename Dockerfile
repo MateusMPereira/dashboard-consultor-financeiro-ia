@@ -49,6 +49,9 @@ RUN npm ci --production --silent
 # Copy server code
 COPY server ./server
 
+# Copy nginx config
+COPY server/nginx.conf /etc/nginx/conf.d/default.conf
+
 # Copy start script and make executable
 COPY server/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
