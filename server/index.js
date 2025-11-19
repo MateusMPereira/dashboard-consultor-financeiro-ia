@@ -271,7 +271,11 @@ app.post("/api/report", async (req, res) => {
     `;
 
     // Generate PDF
-    const browser = await puppeteer.launch({ args: ["--no-sandbox", "--disable-setuid-sandbox"] });
+    const launchOptions = { args: ["--no-sandbox", "--disable-setuid-sandbox"] };
+    if (process.env.PUPPETEER_EXECUTABLE_PATH) {
+      launchOptions.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
+    }
+    const browser = await puppeteer.launch(launchOptions);
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
     const pdfBuffer = await page.pdf({ format: "A4", printBackground: true });
