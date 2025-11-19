@@ -76,3 +76,19 @@ curl -X POST "http://localhost:3000/api/report" -H "Content-Type: application/js
 ```
 
 The endpoint will return HTTP 400 for any error or if the user/company is not found (as requested).
+
+Docker (recommended):
+
+If you want to containerize both frontend and report server, use `docker-compose` to run two services:
+
+1. Build and start both services:
+
+```powershell
+docker-compose up --build
+```
+
+2. Frontend will be available on port `80` and the report server on port `3000`.
+
+Notes:
+- The report server image installs Chromium (Debian) for Puppeteer. This keeps the frontend image small and avoids adding system libs to the nginx image.
+- Provide `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as environment variables when running `docker-compose` (or create a `.env` file).
