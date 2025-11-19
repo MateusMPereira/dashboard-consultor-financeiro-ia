@@ -47,3 +47,32 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+
+## Report server (PDF)
+
+You can run a small report server that exposes `POST /api/report` which accepts a JSON body `{ "phone": "4396666986" }` or a query param `?phone=4396666986`.
+
+Setup:
+
+1. Ensure the following environment variables are set (for Supabase access):
+
+```
+SUPABASE_URL=your_supabase_url
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+PORT=3000
+```
+
+2. Install dependencies and start the report server:
+
+```powershell
+npm i
+npm run serve:report
+```
+
+3. Example using `curl` to request a PDF:
+
+```powershell
+curl -X POST "http://localhost:3000/api/report" -H "Content-Type: application/json" -d '{"phone":"4396666986"}' --output report.pdf
+```
+
+The endpoint will return HTTP 400 for any error or if the user/company is not found (as requested).
