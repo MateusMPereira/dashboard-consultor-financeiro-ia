@@ -3,6 +3,8 @@ import puppeteer from "puppeteer";
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
 
@@ -17,6 +19,12 @@ const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
 const app = express();
 app.use(express.json({ limit: "5mb" }));
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the React app build directory
+app.use(express.static(path.join(__dirname, "..", "dist")));
 
 const normalizePhone = (raw) => {
   if (!raw) return null;
@@ -287,6 +295,12 @@ app.post("/api/report", async (req, res) => {
     console.error("Report error:", err?.message || err);
     return res.status(400).json({ error: "Erro ao gerar relatório" });
   }
+});
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "..", "dist", "index.html"));
 });
 
 const PORT = process.env.PORT || 3000;
