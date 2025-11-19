@@ -1,5 +1,5 @@
 # Etapa 1 - Build do Frontend
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 WORKDIR /app
 
 COPY package*.json ./
@@ -9,7 +9,7 @@ COPY . .
 RUN npm run build
 
 # Etapa 2 - Imagem final com Node.js Server + Chromium
-FROM node:18-bullseye-slim
+FROM node:20-bullseye-slim
 WORKDIR /app
 
 # Não deixar o Puppeteer baixar o Chromium
@@ -23,7 +23,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	libasound2 \
 	libatk-bridge2.0-0 \
 	libatk1.0-0 \
-	cairo2 \
+	libcairo2 \
 	libcups2 \
 	libdbus-1-3 \
 	libexpat1 \
