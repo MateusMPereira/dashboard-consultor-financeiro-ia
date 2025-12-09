@@ -9,12 +9,14 @@ import { MonthYearPicker } from "@/components/dashboard/MonthYearPicker";
 import { TrendChart } from "@/components/dashboard/TrendChart";
 import { TrendChartServices } from "@/components/dashboard/TrendChartServices";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { supabase } from "@/integrations/supabase/client";
 import { startOfMonth, endOfMonth, subMonths, format } from "date-fns";
 import { Transaction } from "@/components/dashboard/TransactionsList";
 
 const Dashboard = () => {
   const { user, empresa, loading: authLoading } = useAuth();
+  const isMobile = useIsMobile();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [metrics, setMetrics] = useState({
@@ -338,7 +340,7 @@ const Dashboard = () => {
         <MonthYearPicker date={selectedDate} setDate={setSelectedDate} />
       </div>
       {/* Metrics Grid */}
-      <div className={`grid gap-6 md:grid-cols-2 ${gridColsClass}`}>
+      <div className={`grid grid-cols-1 gap-6 md:grid-cols-2 ${gridColsClass}`}>
         <MetricCard
           title="Receita Líquida"
           value={formatCurrency(metrics.netIncomes)}
@@ -391,26 +393,26 @@ const Dashboard = () => {
       </div>
 
       {/* Charts Grid */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-[33%]">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-1">
           <DiscretizedCMVChart data={discretizedCMVChartData} />
         </div>
-        <div className="lg:w-[33%]">
+        <div className="lg:col-span-1">
           <FixedExpensesChart data={fixedExpensesChartData} />
         </div>
-        <div className="lg:w-[34%]">
+        <div className="lg:col-span-1">
           <VariableExpensesChart data={variableExpensesChartData} />
         </div>
       </div>
-      <div className="flex flex-col lg:flex-row gap-6">
-        <div className="lg:w-[100%]">
-          {((empresa as any)?.atividade === 'varejo') && <TrendChart data={trendChartData} />}
-          {((empresa as any)?.atividade === 'servico') && <TrendChartServices data={trendChartServicesData} />}
-        </div>
+      <div className="w-full">
+        {!isMobile && ((empresa as any)?.atividade === 'varejo') && <TrendChart data={trendChartData} />}
+        {!isMobile && ((empresa as any)?.atividade === 'servico') && <TrendChartServices data={trendChartServicesData} />}
       </div>
 
       {/* Transactions Table */}
-      <TransactionsList transactions={transactions} />
+      <div className="w-full">
+        <TransactionsList transactions={transactions} />
+      </div>
     </div>
   );
 };

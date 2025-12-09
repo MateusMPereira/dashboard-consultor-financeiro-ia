@@ -26,8 +26,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <AppSidebar />
         <div className="flex-1 flex flex-col">
           <header className="border-b bg-card shadow-sm">
-            <div className="container mx-auto px-6 py-4 flex items-center justify-between gap-4">
-              <SidebarTrigger />
+            <div className="container mx-auto px-6 py-4 flex items-center justify-between md:justify-end gap-4">
+              <div className="md:hidden">
+                <SidebarTrigger />
+              </div>
               <Button variant="ghost" size="sm" onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
                 Sair

@@ -20,16 +20,17 @@ export function VariableExpensesChart({ data }: VariableExpensesChartProps) {
     <Card className="p-6 shadow-card">
       <h3 className="text-xl font-bold">Despesas Variáveis Discretizadas</h3>
       <ResponsiveContainer width="100%" height={300}>
-        <PieChart>
+        <PieChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
             labelLine={false}
             label={({ value }) => `${formatCurrency(value)}`}
-            outerRadius={80}
+            outerRadius={60}
             fill="#8884d8"
             dataKey="value"
+            style={{ fontSize: '12px' }}
           >
             {data.map((entry, index) => (
               <Cell key={`cell-${index}`} fill={entry.color} />

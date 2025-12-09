@@ -208,7 +208,7 @@ const CategoriasPage = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Subcategorias</h1>
           <p className="text-muted-foreground mt-1">
@@ -220,7 +220,7 @@ const CategoriasPage = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button className="gap-2" onClick={() => {
+            <Button className="gap-2 w-full sm:w-auto" onClick={() => {
               resetForm();
               setNaturezaFiltro(activeTab);
             }}>

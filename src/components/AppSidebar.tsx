@@ -1,4 +1,4 @@
-import { LayoutDashboard, AlertTriangle, Target, TrendingUp, Building2, Tag, Receipt } from "lucide-react";
+import { LayoutDashboard, AlertTriangle, TrendingUp, Tag, Receipt } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import {
   Sidebar,
@@ -10,6 +10,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarRail,
 } from "@/components/ui/sidebar";
 
 const financeMenuItems = [
@@ -24,7 +25,8 @@ const registrationMenuItems = [
 
 export function AppSidebar() {
   return (
-    <Sidebar className="border-r shadow-elegant">
+    <Sidebar collapsible="icon" className="border-r shadow-elegant">
+      <SidebarRail />
       <SidebarHeader className="border-b border-border/50 p-6">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-primary shadow-md">
@@ -38,7 +40,6 @@ export function AppSidebar() {
       </SidebarHeader>
       
       <SidebarContent className="px-3 py-4">
-        {/* Finance Group */}
         <SidebarGroup>
           <SidebarGroupLabel className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Financeiro
@@ -47,40 +48,39 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1">
               {financeMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-11">
-                    {item.disabled ? (
-                      <span
-                        className={
-                          "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 text-muted-foreground cursor-not-allowed"
-                        }
-                      >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-sm">{item.title}</span>
-                      </span>
-                    ) : (
-                      <NavLink
-                        to={item.url}
-                        className={({ isActive }) =>
-                          isActive
-                            ? "bg-gradient-primary text-gray-900 dark:text-gray-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900"
-                            : "text-gray-900 dark:text-gray-900 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900 hover:bg-muted/80 transition-all duration-200 hover:translate-x-1"
-                        }
-                      >
-                        <item.icon className="h-5 w-5" />
-                        <span className="text-sm">{item.title}</span>
-                      </NavLink>
-                    )}
-                  </SidebarMenuButton>
+                  {item.disabled ? (
+                    <SidebarMenuButton
+                      as="span"
+                      className="cursor-not-allowed text-muted-foreground"
+                    >
+                      <item.icon className="h-5 w-5" />
+                      <span className="text-sm">{item.title}</span>
+                    </SidebarMenuButton>
+                  ) : (
+                    <NavLink to={item.url}>
+                      {({ isActive }) => (
+                        <SidebarMenuButton
+                          isActive={isActive}
+                          className={
+                            isActive
+                              ? "bg-gradient-primary text-gray-900 dark:text-gray-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900"
+                              : "text-gray-900 dark:text-gray-900 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900 hover:bg-muted/80 transition-all duration-200 hover:translate-x-1"
+                          }
+                        >
+                          <item.icon className="h-5 w-5" />
+                          <span className="text-sm">{item.title}</span>
+                        </SidebarMenuButton>
+                      )}
+                    </NavLink>
+                  )}
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Divider */}
         <div className="my-4 border-t border-border/50" />
 
-        {/* Registration Group */}
         <SidebarGroup>
           <SidebarGroupLabel className="px-3 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
             Cadastros
@@ -89,19 +89,21 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1">
               {registrationMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild className="h-11">
-                    <NavLink
-                      to={item.url}
-                      className={({ isActive }) =>
-                        isActive
-                          ? "bg-gradient-primary text-gray-900 dark:text-gray-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900"
-                          : "text-gray-900 dark:text-gray-900 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900 hover:bg-muted/80 transition-all duration-200 hover:translate-x-1"
-                      }
-                    >
-                      <item.icon className="h-5 w-5" />
-                      <span className="text-sm">{item.title}</span>
-                    </NavLink>
-                  </SidebarMenuButton>
+                  <NavLink to={item.url}>
+                    {({ isActive }) => (
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        className={
+                          isActive
+                            ? "bg-gradient-primary text-gray-900 dark:text-gray-900 font-semibold shadow-md hover:shadow-lg transition-all duration-200 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900"
+                            : "text-gray-900 dark:text-gray-900 hover:text-gray-900 [&_*]:text-gray-900 [&_*]:hover:text-gray-900 hover:bg-muted/80 transition-all duration-200 hover:translate-x-1"
+                        }
+                      >
+                        <item.icon className="h-5 w-5" />
+                        <span className="text-sm">{item.title}</span>
+                      </SidebarMenuButton>
+                    )}
+                  </NavLink>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

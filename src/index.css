@@ -92,25 +92,24 @@ All colors MUST be HSL.
   }
 }
 
+html, body {
+  overflow-x: hidden;
+}
+
+body {
+  position: relative;
+  width: 100vw;
+}
+
 @layer base {
   * {
     @apply border-border;
+    box-sizing: border-box;
   }
 
   body {
     @apply bg-background text-foreground;
     font-size: 14px;
-  }
-  
-  h1 {
-    font-size: 1.75rem;
-  }
-  
-  h2 {
-    font-size: 1.5rem;
-  }
-  
-  h3 {
-    font-size: 1.25rem;
+    overflow-x: hidden;
   }
 }

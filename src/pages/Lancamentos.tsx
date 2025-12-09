@@ -269,7 +269,7 @@ const Lancamentos = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold">Lançamentos Financeiros</h2>
           <p className="text-muted-foreground">Gerencie todas as receitas e despesas</p>
@@ -279,7 +279,7 @@ const Lancamentos = () => {
           if (!open) resetForm();
         }}>
           <DialogTrigger asChild>
-            <Button onClick={() => {
+            <Button className="w-full sm:w-auto" onClick={() => {
               resetForm();
               setNaturezaFiltro(activeTab);
             }}>
@@ -475,9 +475,9 @@ const Lancamentos = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Fonte</TableHead>
+                        <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                        <TableHead className="hidden md:table-cell">Data</TableHead>
+                        <TableHead className="hidden md:table-cell">Fonte</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
@@ -486,14 +486,14 @@ const Lancamentos = () => {
                       {expenseLancamentos.map((lancamento) => (
                         <TableRow key={lancamento.id}>
                           <TableCell className="font-medium">{lancamento.descricao}</TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <div className="font-medium">{lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "-"}</div>
                             {lancamento.subcategorias?.nome && (
                               <div className="text-sm text-muted-foreground mt-1">{lancamento.subcategorias.nome}</div>
                             )}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
-                          <TableCell>{lancamento.fonte || "-"}</TableCell>
+                          <TableCell className="text-muted-foreground hidden md:table-cell">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
+                          <TableCell className="hidden md:table-cell">{lancamento.fonte || "-"}</TableCell>
                           <TableCell className="text-right font-semibold text-red-600">- R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
@@ -532,9 +532,9 @@ const Lancamentos = () => {
                     <TableHeader>
                       <TableRow>
                         <TableHead>Descrição</TableHead>
-                        <TableHead>Categoria</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Fonte</TableHead>
+                        <TableHead className="hidden md:table-cell">Categoria</TableHead>
+                        <TableHead className="hidden md:table-cell">Data</TableHead>
+                        <TableHead className="hidden md:table-cell">Fonte</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
                         <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
@@ -543,14 +543,14 @@ const Lancamentos = () => {
                       {incomeLancamentos.map((lancamento) => (
                         <TableRow key={lancamento.id}>
                           <TableCell className="font-medium">{lancamento.descricao}</TableCell>
-                          <TableCell>
+                          <TableCell className="hidden md:table-cell">
                             <div className="font-medium">{lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "-"}</div>
                             {lancamento.subcategorias?.nome && (
                               <div className="text-sm text-muted-foreground mt-1">{lancamento.subcategorias.nome}</div>
                             )}
                           </TableCell>
-                          <TableCell className="text-muted-foreground">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
-                          <TableCell>{lancamento.fonte || "-"}</TableCell>
+                          <TableCell className="text-muted-foreground hidden md:table-cell">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
+                          <TableCell className="hidden md:table-cell">{lancamento.fonte || "-"}</TableCell>
                           <TableCell className="text-right font-semibold text-green-600">+ R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex gap-2 justify-end">
