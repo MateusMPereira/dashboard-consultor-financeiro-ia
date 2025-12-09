@@ -57,8 +57,8 @@ Setup:
 1. Ensure the following environment variables are set (for Supabase access):
 
 ```
-SUPABASE_URL=your_supabase_url
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_PUBLISHABLE_KEY=your_service_role_key
 PORT=3000
 ```
 

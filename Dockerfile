@@ -63,6 +63,11 @@ RUN npm ci --production --silent
 # Copiar o código do servidor
 COPY server ./server
 
+# Configurar variáveis de ambiente do Supabase para o servidor
+# ATENÇÃO: Em produção, configure SUPABASE_URL e SUPABASE_KEY diretamente no EasyPanel
+RUN echo "SUPABASE_URL=$SUPABASE_URL" >> server/.env && \
+    echo "SUPABASE_KEY=$SUPABASE_KEY" >> server/.env
+
 # Copiar o build do frontend da etapa de build
 COPY --from=builder /app/dist ./dist
 
