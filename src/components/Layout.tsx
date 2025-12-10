@@ -36,7 +36,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </Button>
             </div>
           </header>
-          <main className="flex-1 container mx-auto px-6 py-8">{children}</main>
+          <main className="w-full h-[calc(100vh-4rem)] overflow-y-auto bg-zinc-100/40 dark:bg-zinc-800/40">{children}</main>
         </div>
       </div>
     </SidebarProvider>
