@@ -332,7 +332,7 @@ const Dashboard = () => {
   }
 
   const atividade = (empresa as any)?.atividade;
-  const gridColsClass = atividade === 'varejo' ? 'lg:grid-cols-5' : 'lg:grid-cols-4';
+  const gridColsClass = atividade === 'varejo' ? 'lg:grid-cols-4' : 'lg:grid-cols-3';
 
   return (
     <div className="space-y-8">
@@ -373,16 +373,7 @@ const Dashboard = () => {
           variant="destructive"
         />
         <MetricCard
-          title="Margem de Contribuição"
-          value={formatCurrency(metrics.contributionMargin)}
-          change={getChangeValue(metrics.contributionMargin, metrics.previousContributionMargin)}
-          changeType={getExpenseChangeType(metrics.contributionMargin, metrics.previousContributionMargin)}
-          overIncome={getOverIncome(metrics.netIncomes, metrics.contributionMargin)}
-          icon={PieChart}
-          variant="destructive"
-        />
-        <MetricCard
-          title="Ebitda"
+          title="Lucro Líquido"
           value={formatCurrency(metrics.ebitda)}
           change={getChangeValue(metrics.ebitda, metrics.previousEbitda)}
           changeType={getChangeType(metrics.ebitda, metrics.previousEbitda)}
