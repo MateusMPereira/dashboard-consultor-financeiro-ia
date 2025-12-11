@@ -78,21 +78,43 @@ export function HorizontalBarChart({
             {chartData.map((item) => (
               <Tooltip key={item.name} delayDuration={100}>
                 <TooltipTrigger asChild>
-                  <div className="flex items-center w-full group">
-                    <div className="w-[35%] truncate pr-4 text-sm">
+                  <div
+                    className={cn(
+                      "flex items-center w-full group",
+                      isMobile && "flex-col items-start mb-4",
+                    )}
+                  >
+                    <div
+                      className={cn(
+                        "pr-4 text-sm",
+                        isMobile ? "w-full mb-1" : "w-[35%]",
+                      )}
+                    >
                       {item.name}
                     </div>
-                    <div className="w-[55%]">
+                    <div
+                      className={cn(
+                        "flex items-center",
+                        isMobile ? "w-full" : "w-[65%]",
+                      )}
+                    >
+                      <div className={cn(isMobile ? "w-[75%]" : "w-[85%]")}>
+                        <div
+                          className="h-6 rounded-md transition-all duration-300"
+                          style={{
+                            width: `${(item.value / maxChartValue) * 100}%`,
+                            backgroundColor: item.color,
+                          }}
+                        />
+                      </div>
                       <div
-                        className="h-6 rounded-md transition-all duration-300"
-                        style={{
-                          width: `${(item.value / maxChartValue) * 100}%`,
-                          backgroundColor: item.color,
-                        }}
-                      />
-                    </div>
-                    <div className="w-[10%] text-right pl-4 text-sm font-medium">
-                      {formatPercentage((item.value / totalValue) * 100)}
+                        className={cn(
+                          "text-right pl-4 text-sm font-medium",
+                          isMobile ? "w-[25%]" : "w-[15%]",
+                        )}
+                      >
+                        {formatPercentage((item.value / totalValue) * 100)}
+                      </div>
                     </div>
                   </div>
                 </TooltipTrigger>
