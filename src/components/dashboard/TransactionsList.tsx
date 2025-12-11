@@ -37,7 +37,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
             <TableRow>
               <TableHead>Descrição</TableHead>
               <TableHead className="hidden md:table-cell">Categoria</TableHead>
-              <TableHead>Data</TableHead>
+              <TableHead className="hidden md:table-cell">Data</TableHead>
               <TableHead className="text-right">Valor</TableHead>
             </TableRow>
           </TableHeader>
@@ -48,7 +48,7 @@ export function TransactionsList({ transactions }: TransactionsListProps) {
                 <TableCell className="hidden md:table-cell">
                   <Badge variant="secondary">{transaction.category}</Badge>
                 </TableCell>
-                <TableCell className="text-muted-foreground">{transaction.date}</TableCell>
+                <TableCell className="text-muted-foreground hidden md:table-cell">{transaction.date}</TableCell>
                 <TableCell
                   className={cn(
                     "text-right font-semibold",

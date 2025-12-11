@@ -479,7 +479,7 @@ const Lancamentos = () => {
                         <TableHead className="hidden md:table-cell">Data</TableHead>
                         <TableHead className="hidden md:table-cell">Fonte</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                        <TableHead className="text-right hidden md:table-cell">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -495,7 +495,7 @@ const Lancamentos = () => {
                           <TableCell className="text-muted-foreground hidden md:table-cell">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="hidden md:table-cell">{lancamento.fonte || "-"}</TableCell>
                           <TableCell className="text-right font-semibold text-red-600">- R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right hidden md:table-cell">
                             <div className="flex gap-2 justify-end">
                               <Button variant="outline" size="icon" onClick={() => handleEdit(lancamento)}>
                                 <Pencil className="h-4 w-4" />
@@ -536,7 +536,7 @@ const Lancamentos = () => {
                         <TableHead className="hidden md:table-cell">Data</TableHead>
                         <TableHead className="hidden md:table-cell">Fonte</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
+                        <TableHead className="text-right hidden md:table-cell">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -552,7 +552,7 @@ const Lancamentos = () => {
                           <TableCell className="text-muted-foreground hidden md:table-cell">{format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy")}</TableCell>
                           <TableCell className="hidden md:table-cell">{lancamento.fonte || "-"}</TableCell>
                           <TableCell className="text-right font-semibold text-green-600">+ R$ {Number(lancamento.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}</TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right hidden md:table-cell">
                             <div className="flex gap-2 justify-end">
                               <Button variant="outline" size="icon" onClick={() => handleEdit(lancamento)}>
                                 <Pencil className="h-4 w-4" />
