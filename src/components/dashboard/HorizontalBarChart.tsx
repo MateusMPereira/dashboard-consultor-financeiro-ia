@@ -72,33 +72,24 @@ export function HorizontalBarChart({
           </div>
         </div>
       </CardHeader>
-      <CardContent className={cn("p-0", !isMobile && "h-[224px]")}>
-        <div className="space-y-4">
+      <CardContent className="p-0">
+        <div>
           <TooltipProvider>
             {chartData.map((item) => (
               <Tooltip key={item.name} delayDuration={100}>
                 <TooltipTrigger asChild>
                   <div
-                    className={cn(
-                      "flex items-center w-full group",
-                      isMobile && "flex-col items-start mb-4",
-                    )}
+                    className="flex flex-col items-start w-full group mb-4"
                   >
                     <div
-                      className={cn(
-                        "pr-4 text-sm",
-                        isMobile ? "w-full mb-1" : "w-[35%]",
-                      )}
+                      className="pr-4 text-sm w-full mb-1"
                     >
                       {item.name}
                     </div>
                     <div
-                      className={cn(
-                        "flex items-center",
-                        isMobile ? "w-full" : "w-[65%]",
-                      )}
+                      className="flex items-center w-full"
                     >
-                      <div className={cn(isMobile ? "w-[75%]" : "w-[85%]")}>
+                      <div className="w-[75%]">
                         <div
                           className="h-6 rounded-md transition-all duration-300"
                           style={{
@@ -108,10 +99,7 @@ export function HorizontalBarChart({
                         />
                       </div>
                       <div
-                        className={cn(
-                          "text-right pl-4 text-sm font-medium",
-                          isMobile ? "w-[25%]" : "w-[15%]",
-                        )}
+                        className="text-right pl-4 text-sm font-medium w-[25%]"
                       >
                         {formatPercentage((item.value / totalValue) * 100)}
                       </div>
