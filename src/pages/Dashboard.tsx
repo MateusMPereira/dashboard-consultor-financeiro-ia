@@ -177,118 +177,125 @@ const Dashboard = () => {
     }
   };
 
-  const fetchTrendsAndTransactionsData = async () => {
-    try {
-      const empresaId = empresa?.id || user?.empresa_id;
-      if (!empresaId) throw new Error("Empresa não encontrada");
-
-      const today = new Date();
-      const sixMonthsAgo = subMonths(today, 5);
-
-      const { data: lancamentos, error } = await supabase
-        .from("lancamentos")
-        .select("*, subcategorias(*, categorias(*))")
-        .eq("empresa_id", empresaId)
-        .gte("data_referencia", format(startOfMonth(sixMonthsAgo), "yyyy-MM-dd"))
-        .lte("data_referencia", format(endOfMonth(today), "yyyy-MM-dd"))
-        .order("data_referencia", { ascending: false });
-
-      if (error) throw error;
-
-      const allLancamentos = (lancamentos || []).map((item: any) => ({
-        ...item,
-        tipo: item.subcategorias?.categorias?.natureza || 'despesa',
-      }));
-
-  const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
-  const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
-  const atividade = (empresa as any)?.atividade || undefined;
-      
-      const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
-      const variableCostKeywords = [
-        'DESPESAS VARIAVEIS', 'DESPESAS VARIÁVEIS', 'DESPESA VARIAVEL', 'DESPESA VARIÁVEL',
-        'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
-      ];
-      const cmvKeywords = [
-        'CMV', 'CUSTO DE MERCADORIA VENDIDA', 'CUSTOS DE MERCADORIA VENDIDA',
-        'CUSTO POR MERCADORIA VENDIDA', 'CUSTOS POR MERCADORIA VENDIDA'
-      ];
-      const taxKeywords = ['IMPOSTO', 'IMPOSTOS'];
-
-      allLancamentos.forEach((lancamento: any) => {
-        const amount = parseFloat(lancamento.valor);
-        const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
+    const fetchTrendsAndTransactionsData = async () => {
+      try {
+        const empresaId = empresa?.id || user?.empresa_id;
+        if (!empresaId) throw new Error("Empresa não encontrada");
+  
+        const today = new Date();
+        const sixMonthsAgo = subMonths(today, 5);
+  
+        const { data: lancamentos, error } = await supabase
+          .from("lancamentos")
+          .select("*, subcategorias(*, categorias(*))")
+          .eq("empresa_id", empresaId)
+          .gte("data_referencia", format(startOfMonth(sixMonthsAgo), "yyyy-MM-dd"))
+          .lte("data_referencia", format(endOfMonth(today), "yyyy-MM-dd"))
+          .order("data_referencia", { ascending: false });
+  
+        if (error) throw error;
+  
+        const allLancamentos = (lancamentos || []).map((item: any) => ({
+          ...item,
+          tipo: item.subcategorias?.categorias?.natureza || 'despesa',
+        }));
+  
+        const trendDataMap: { [key: string]: { income: number; cmv: number; expenses: number } } = {};
+        const trendServicesDataMap: { [key: string]: { income: number; trendOperatingExpenses: number } } = {};
         
-        if (!trendDataMap[monthKey]) {
-          trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
-        }
-        if (!trendServicesDataMap[monthKey]) {
-          trendServicesDataMap[monthKey] = { income: 0, trendOperatingExpenses: 0 };
-        }
-
-        const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
-        const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
-        const isTax = descriptionUpperCase && taxKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
-
-        if (lancamento.tipo === "receita") {
-          if (atividade === 'varejo') {
-            trendDataMap[monthKey].income += amount;
+        const monthKeys = Array.from({ length: 6 }, (_, i) => format(subMonths(today, i), 'MMM')).reverse();
+        
+        monthKeys.forEach(key => {
+          trendDataMap[key] = { income: 0, cmv: 0, expenses: 0 };
+          trendServicesDataMap[key] = { income: 0, trendOperatingExpenses: 0 };
+        });
+  
+        const atividade = (empresa as any)?.atividade || undefined;
+        
+        const fixedCostKeywords = ['DESPESAS FIXAS', 'DESPESA FIXA', 'CUSTOS FIXOS', 'CUSTO FIXO'];
+        const variableCostKeywords = [
+          'DESPESAS VARIAVEIS', 'DESPESAS VARIÁVEIS', 'DESPESA VARIAVEL', 'DESPESA VARIÁVEL',
+          'CUSTOS VARIAVEIS', 'CUSTOS VARIÁVEIS', 'CUSTO VARIAVEL', 'CUSTO VARIÁVEL'
+        ];
+        const cmvKeywords = [
+          'CMV', 'CUSTO DE MERCADORIA VENDIDA', 'CUSTOS DE MERCADORIA VENDIDA',
+          'CUSTO POR MERCADORIA VENDIDA', 'CUSTOS POR MERCADORIA VENDIDA'
+        ];
+        const taxKeywords = ['IMPOSTO', 'IMPOSTOS'];
+  
+        allLancamentos.forEach((lancamento: any) => {
+          const amount = parseFloat(lancamento.valor);
+          const monthKey = format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "MMM");
+          
+          if (!trendDataMap[monthKey]) {
+            trendDataMap[monthKey] = { income: 0, cmv: 0, expenses: 0 };
           }
-          if (atividade === 'servico') {
-            trendServicesDataMap[monthKey].income += amount;
+          if (!trendServicesDataMap[monthKey]) {
+            trendServicesDataMap[monthKey] = { income: 0, trendOperatingExpenses: 0 };
           }
-        } else { // Non-revenue
-          if (isCMV) {
-            if (atividade === 'varejo') trendDataMap[monthKey].cmv += amount;
-          } else if (!isTax) { // Operating Expense (excluding taxes)
-            if (atividade === 'varejo') trendDataMap[monthKey].expenses += amount;
-            if (atividade === 'servico') trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
+  
+          const descriptionUpperCase = lancamento.subcategorias?.categorias?.descricao?.toUpperCase();
+          const isCMV = descriptionUpperCase && cmvKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
+          const isTax = descriptionUpperCase && taxKeywords.some(keyword => descriptionUpperCase.includes(keyword)) && lancamento.tipo === 'despesa';
+  
+          if (lancamento.tipo === "receita") {
+            if (atividade === 'varejo' && trendDataMap[monthKey]) {
+              trendDataMap[monthKey].income += amount;
+            }
+            if (atividade === 'servico' && trendServicesDataMap[monthKey]) {
+              trendServicesDataMap[monthKey].income += amount;
+            }
+          } else { // Non-revenue
+            if (isCMV) {
+              if (atividade === 'varejo' && trendDataMap[monthKey]) trendDataMap[monthKey].cmv += amount;
+            } else if (!isTax) { // Operating Expense (excluding taxes)
+              if (atividade === 'varejo' && trendDataMap[monthKey]) trendDataMap[monthKey].expenses += amount;
+              if (atividade === 'servico' && trendServicesDataMap[monthKey]) trendServicesDataMap[monthKey].trendOperatingExpenses += amount;
+            }
           }
+        });
+  
+        if (atividade === 'varejo') {
+          setTrendChartData(monthKeys.map(month => ({
+            month,
+            income: trendDataMap[month].income,
+            cmv: trendDataMap[month].cmv,
+            despesasOperacionais: trendDataMap[month].expenses,
+          })));
+          // clear services chart data
+          setTrendChartServicesData([]);
+        } else if (atividade === 'servico') {
+          setTrendChartServicesData(monthKeys.map(month => ({
+            month,
+            income: trendServicesDataMap[month].income,
+            trendOperatingExpenses: trendServicesDataMap[month].trendOperatingExpenses,
+          })));
+          // clear varejo chart data
+          setTrendChartData([]);
+        } else {
+          // If atividade not defined, clear both
+          setTrendChartData([]);
+          setTrendChartServicesData([]);
         }
-      });
-
-      if (atividade === 'varejo') {
-        setTrendChartData(Object.keys(trendDataMap).map(month => ({
-          month,
-          income: trendDataMap[month].income,
-          cmv: trendDataMap[month].cmv,
-          despesasOperacionais: trendDataMap[month].expenses,
-        })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
-        // clear services chart data
-        setTrendChartServicesData([]);
-      } else if (atividade === 'servico') {
-        setTrendChartServicesData(Object.keys(trendServicesDataMap).map(month => ({
-          month,
-          income: trendServicesDataMap[month].income,
-          trendOperatingExpenses: trendServicesDataMap[month].trendOperatingExpenses,
-        })).sort((a, b) => new Date(`1 ${a.month} 2000`).getTime() - new Date(`1 ${b.month} 2000`).getTime()));
-        // clear varejo chart data
-        setTrendChartData([]);
-      } else {
-        // If atividade not defined, clear both
-        setTrendChartData([]);
-        setTrendChartServicesData([]);
+  
+        const currentMonthStartForTransactions = format(startOfMonth(today), "yyyy-MM-dd");
+        setTransactions(allLancamentos
+          .filter((lancamento: any) => lancamento.data_referencia >= currentMonthStartForTransactions)
+          .map((lancamento: any) => ({
+            id: lancamento.id,
+            description: lancamento.descricao,
+            category: lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "N/A",
+            amount: parseFloat(lancamento.valor),
+            date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
+            type: (lancamento.tipo === "receita" ? "income" : "expense") as "income" | "expense",
+          }))
+          .slice(0, 4)
+        );
+  
+      } catch (error: any) {
+        console.error("Error fetching trend and transaction data:", error.message);
       }
-
-      const currentMonthStartForTransactions = format(startOfMonth(today), "yyyy-MM-dd");
-      setTransactions(allLancamentos
-        .filter((lancamento: any) => lancamento.data_referencia >= currentMonthStartForTransactions)
-        .map((lancamento: any) => ({
-          id: lancamento.id,
-          description: lancamento.descricao,
-          category: lancamento.subcategorias?.categorias?.descricao || lancamento.subcategorias?.nome || "N/A",
-          amount: parseFloat(lancamento.valor),
-          date: format(new Date(lancamento.data_referencia.replace(/-/g, '/')), "dd/MM/yyyy"),
-          type: (lancamento.tipo === "receita" ? "income" : "expense") as "income" | "expense",
-        }))
-        .slice(0, 4)
-      );
-
-    } catch (error: any) {
-      console.error("Error fetching trend and transaction data:", error.message);
-    }
-  };
-
+    };
   const formatCurrency = (value: number) => {
     return value.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
   };
