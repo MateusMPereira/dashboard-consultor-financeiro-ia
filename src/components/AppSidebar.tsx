@@ -11,6 +11,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarRail,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const financeMenuItems = [
@@ -24,6 +25,14 @@ const registrationMenuItems = [
 ];
 
 export function AppSidebar() {
+  const { isMobile, setOpenMobile } = useSidebar();
+
+  const handleMenuItemClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
+
   return (
     <Sidebar collapsible="icon" className="border-r shadow-elegant">
       <SidebarRail />
@@ -57,7 +66,7 @@ export function AppSidebar() {
                       <span className="text-sm">{item.title}</span>
                     </SidebarMenuButton>
                   ) : (
-                    <NavLink to={item.url}>
+                    <NavLink to={item.url} onClick={handleMenuItemClick}>
                       {({ isActive }) => (
                         <SidebarMenuButton
                           isActive={isActive}
@@ -89,7 +98,7 @@ export function AppSidebar() {
             <SidebarMenu className="gap-1">
               {registrationMenuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <NavLink to={item.url}>
+                  <NavLink to={item.url} onClick={handleMenuItemClick}>
                     {({ isActive }) => (
                       <SidebarMenuButton
                         isActive={isActive}
