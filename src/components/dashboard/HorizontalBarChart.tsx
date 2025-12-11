@@ -72,7 +72,7 @@ export function HorizontalBarChart({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
+      <CardContent className={cn("p-0", !isMobile && "h-[384px]")}>
         <div>
           <TooltipProvider>
             {chartData.map((item) => (
