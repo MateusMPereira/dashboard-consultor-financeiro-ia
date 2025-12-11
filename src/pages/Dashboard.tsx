@@ -158,19 +158,16 @@ const Dashboard = () => {
         previousEbitda: previousNetIncomes - (previousTotalCMV + previousOperatingExpenses)
       });
 
-      const colorPalette = [
-        "hsl(var(--primary))", "hsl(var(--success))", "hsl(var(--destructive))",
-        "#FFA500", "#800080", "#FFD700", "#000000", "#808080"
-      ];
+            setDiscretizedCMVChartData(Object.keys(cmvBySubcategory).map(name => ({
 
-      setDiscretizedCMVChartData(Object.keys(cmvBySubcategory).map(name => ({
-        name, value: cmvBySubcategory[name], color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
-      })));
+              name, value: cmvBySubcategory[name],
+
+            })));
       setFixedExpensesChartData(Object.keys(fixedExpensesBySubcategory).map(name => ({
-        name, value: fixedExpensesBySubcategory[name], color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+        name, value: fixedExpensesBySubcategory[name],
       })));
       setVariableExpensesChartData(Object.keys(variableExpensesBySubcategory).map(name => ({
-        name, value: variableExpensesBySubcategory[name], color: colorPalette[Math.floor(Math.random() * colorPalette.length)],
+        name, value: variableExpensesBySubcategory[name],
       })));
 
     } catch (error: any) {
