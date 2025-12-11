@@ -4,20 +4,18 @@ import { Button } from "@/components/ui/button";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate();
+  const { setUser, setAuthUser, setEmpresa } = useAuth();
 
   const handleLogout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) {
-      toast.error("Erro ao sair");
-    } else {
-      toast.success("Logout realizado com sucesso");
-      // Usa window.location para garantir que funciona na VPS com hash routing
-      window.location.href = "/#/auth";
-    }
+    await supabase.auth.signOut();
+    setUser(null);
+    setAuthUser(null);
+    setEmpresa(null);
+    navigate('/auth', { replace: true });
   };
 
   return (
