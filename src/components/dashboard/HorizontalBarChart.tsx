@@ -82,7 +82,10 @@ export function HorizontalBarChart({
                     className="flex flex-col items-start w-full group mb-4"
                   >
                     <div
-                      className="pr-4 text-sm w-full mb-1"
+                      className={cn(
+                        "pr-4 text-sm w-full mb-1",
+                        !isMobile && "truncate"
+                      )}
                     >
                       {item.name}
                     </div>
