@@ -11,6 +11,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { getShuffledColors } from "@/lib/colors";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 interface ChartData {
   name: string;
@@ -36,6 +38,7 @@ export function HorizontalBarChart({
   title,
   periodLabel = "Últimos 30 dias",
 }: HorizontalBarChartProps) {
+  const isMobile = useIsMobile();
   const totalValue = data.reduce((sum, item) => sum + item.value, 0);
 
   const sortedData = [...data].sort((a, b) => b.value - a.value);
@@ -69,7 +72,7 @@ export function HorizontalBarChart({
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0 h-[224px]">
+      <CardContent className={cn("p-0", !isMobile && "h-[224px]")}>
         <div className="space-y-4">
           <TooltipProvider>
             {chartData.map((item) => (
